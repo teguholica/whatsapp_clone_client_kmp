@@ -28,6 +28,10 @@ kotlin {
         }
     }
 
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     android {
        namespace = "com.teguholica.chat.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()

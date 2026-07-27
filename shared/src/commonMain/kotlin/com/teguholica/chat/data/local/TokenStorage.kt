@@ -1,8 +1,13 @@
 package com.teguholica.chat.data.local
 
-object StorageKeys {
-    const val ACCESS_TOKEN = "access_token"
-    const val REFRESH_TOKEN = "refresh_token"
-    const val USER_ID = "user_id"
-    const val PHONE = "phone"
+expect class TokenStorage {
+    fun saveAccessToken(token: String)
+    fun getAccessToken(): String?
+    fun saveRefreshToken(token: String)
+    fun getRefreshToken(): String?
+    fun saveUserId(id: String)
+    fun getUserId(): String?
+    fun savePhone(phone: String)
+    fun getPhone(): String?
+    fun clear()
 }
