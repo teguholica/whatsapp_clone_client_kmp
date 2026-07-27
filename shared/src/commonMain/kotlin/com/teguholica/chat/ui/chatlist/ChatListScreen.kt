@@ -26,48 +26,61 @@ import org.koin.compose.koinInject
 fun ChatListScreen(
     onChatClick: (String) -> Unit,
     onLogout: () -> Unit,
+    onCreateGroup: () -> Unit,
     viewModel: ChatListViewModel = koinInject(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    when (val state = uiState) {
-        is ChatListUiState.Loading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+    LaunchedEffect(uiState) {
+        if (uiState is ChatListUiState.Error) {
+            val msg = (uiState as ChatListUiState.Error).message
+            snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Short)
         }
-        is ChatListUiState.Error -> {
-            Column(
-                Modifier.fillMaxSize().padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(state.message, color = MaterialTheme.colorScheme.error)
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = { viewModel.loadChats() }) {
-                    Text("Coba lagi")
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { padding ->
+        when (val state = uiState) {
+            is ChatListUiState.Loading -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
             }
-        }
-        is ChatListUiState.Success -> {
-            Column(Modifier.fillMaxSize()) {
-                ChatListHeader(onLogout = onLogout)
-                if (state.chats.isEmpty()) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Belum ada chat", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                } else {
-                    LazyColumn {
-                        items(state.chats, key = { it.id }) { chat ->
-                            ChatListItem(
-                                chat = chat,
-                                isTyping = state.typingMap[chat.id] == true,
-                                onClick = {
-                                    viewModel.selectChat(chat.id)
-                                    onChatClick(chat.id)
-                                },
-                            )
+            is ChatListUiState.Success -> {
+                Column(Modifier.fillMaxSize().padding(padding)) {
+                    ChatListHeader(onLogout = onLogout, onCreateGroup = onCreateGroup)
+                    if (state.chats.isEmpty()) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Belum ada chat", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                    } else {
+                        LazyColumn {
+                            items(state.chats, key = { it.id }) { chat ->
+                                ChatListItem(
+                                    chat = chat,
+                                    isTyping = state.typingMap[chat.id] == true,
+                                    onClick = {
+                                        viewModel.selectChat(chat.id)
+                                        onChatClick(chat.id)
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            is ChatListUiState.Error -> {
+                Column(
+                    Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(state.message, color = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { viewModel.loadChats() }) {
+                        Text("Coba lagi")
                     }
                 }
             }
@@ -76,13 +89,16 @@ fun ChatListScreen(
 }
 
 @Composable
-private fun ChatListHeader(onLogout: () -> Unit) {
+private fun ChatListHeader(onLogout: () -> Unit, onCreateGroup: () -> Unit) {
     Surface(shadowElevation = 1.dp) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("Chat", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            TextButton(onClick = onCreateGroup) {
+                Text("Grup Baru")
+            }
             TextButton(onClick = onLogout) {
                 Text("Logout", color = MaterialTheme.colorScheme.error)
             }
@@ -175,27 +191,28 @@ private fun AvatarWithPresence(chat: Chat) {
         } else {
             chat.name.firstOrNull()?.uppercase() ?: "?"
         }
+        val avatarBg = if (chat.type == ChatType.GROUP) Color(0xFF25D366) else MaterialTheme.colorScheme.primaryContainer
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(if (chat.type == ChatType.GROUP) Color(0xFF25D366) else MaterialTheme.colorScheme.primaryContainer),
+                .background(avatarBg),
             contentAlignment = Alignment.Center,
         ) {
-            Text(avatarText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = if (chat.type == ChatType.GROUP) Color.White else Color.Unspecified)
+            val textColor = if (chat.type == ChatType.GROUP) Color.White else Color.Unspecified
+            Text(avatarText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
         }
 
         if (chat.type == ChatType.PERSONAL) {
-            val anyOnline = chat.participants.any { it.presence?.status == PresenceStatus.ONLINE }
-            if (anyOnline) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF25D366))
-                        .align(Alignment.BottomEnd),
-                )
-            }
+            val online = chat.participants.any { it.presence?.status == PresenceStatus.ONLINE }
+            val dotColor = if (online) Color(0xFF25D366) else Color(0xFFA0A0A0)
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+                    .align(Alignment.BottomEnd),
+            )
         }
     }
 }

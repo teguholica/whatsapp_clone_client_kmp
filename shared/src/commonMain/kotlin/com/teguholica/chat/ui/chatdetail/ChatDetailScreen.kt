@@ -20,7 +20,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.teguholica.chat.data.remote.ApiConfig
 import com.teguholica.chat.domain.model.Message
 import com.teguholica.chat.domain.model.MessageStatus
 import com.teguholica.chat.domain.model.MessageType
@@ -59,71 +58,73 @@ fun ChatDetailScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        ChatDetailHeader(name = chatName, onBack = onBack)
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            ChatDetailHeader(name = chatName, onBack = onBack)
 
-        when (val state = uiState) {
-            is ChatDetailUiState.Loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+            when (val state = uiState) {
+                is ChatDetailUiState.Loading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
-            is ChatDetailUiState.Error -> {
-                Column(
-                    Modifier.fillMaxSize().padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(state.message, color = MaterialTheme.colorScheme.error)
+                is ChatDetailUiState.Error -> {
+                    Column(
+                        Modifier.fillMaxSize().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(state.message, color = MaterialTheme.colorScheme.error)
+                    }
                 }
-            }
-            is ChatDetailUiState.Success -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .background(Color(0xFFECE5DD))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    state = listState,
-                    verticalArrangement = Arrangement.Bottom,
-                ) {
-                    if (state.hasMore) {
-                        item {
-                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                TextButton(onClick = { viewModel.loadMore() }) {
-                                    Text("Muat lebih banyak")
+                is ChatDetailUiState.Success -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(Color(0xFFECE5DD))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        state = listState,
+                        verticalArrangement = Arrangement.Bottom,
+                    ) {
+                        if (state.hasMore) {
+                            item {
+                                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    TextButton(onClick = { viewModel.loadMore() }) {
+                                        Text("Muat lebih banyak")
+                                    }
                                 }
+                            }
+                        }
+
+                        items(state.messages, key = { it.id }) { message ->
+                            MessageBubble(
+                                message = message,
+                                isMine = message.senderId == currentUserId,
+                                showSenderName = !personal && message.senderId != currentUserId,
+                            )
+                        }
+
+                        state.typingUserId?.let { userId ->
+                            item {
+                                if (personal) TypingBubble(senderName = null)
+                                else TypingBubble(senderName = userId)
                             }
                         }
                     }
 
-                    items(state.messages, key = { it.id }) { message ->
-                        MessageBubble(
-                            message = message,
-                            isMine = message.senderId == currentUserId,
-                            showSenderName = !personal && message.senderId != currentUserId,
-                        )
+                    if (isUploading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     }
 
-                    state.typingUserId?.let { userId ->
-                        item {
-                            if (personal) TypingBubble(senderName = null)
-                            else TypingBubble(senderName = userId)
-                        }
-                    }
+                    MessageInput(
+                        text = draft,
+                        onTextChange = viewModel::updateDraft,
+                        onSend = viewModel::sendMessage,
+                        onAttachImage = { viewModel.pickAndSendMedia("image") },
+                        onAttachDocument = { viewModel.pickAndSendMedia("document") },
+                    )
                 }
-
-                if (isUploading) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-
-                MessageInput(
-                    text = draft,
-                    onTextChange = viewModel::updateDraft,
-                    onSend = viewModel::sendMessage,
-                    onAttachImage = { viewModel.pickAndSendMedia("image") },
-                    onAttachDocument = { viewModel.pickAndSendMedia("document") },
-                )
             }
         }
     }
@@ -181,7 +182,7 @@ private fun MessageBubble(message: Message, isMine: Boolean, showSenderName: Boo
                 }
 
                 when (message.type) {
-                    MessageType.IMAGE -> MediaPreview(message.content, isMine)
+                    MessageType.IMAGE -> MediaPreview(message.content)
                     MessageType.VIDEO -> {
                         Text("[Video]", fontSize = 14.sp, color = Color(0xFF303030))
                         Spacer(Modifier.height(2.dp))
@@ -221,7 +222,7 @@ private fun MessageBubble(message: Message, isMine: Boolean, showSenderName: Boo
 }
 
 @Composable
-private fun MediaPreview(content: String, isMine: Boolean) {
+private fun MediaPreview(content: String) {
     val url = remember(content) { parseMediaUrl(content) }
     if (url != null) {
         AsyncImage(
@@ -260,8 +261,8 @@ private fun TypingBubble(senderName: String?) {
                 .background(whiteBubble, RoundedCornerShape(12.dp, 12.dp, 4.dp, 12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            val typingText = if (senderName != null) "$senderName sedang mengetik..." else "sedang mengetik..."
-            Text(typingText, fontSize = 14.sp, color = checkGray)
+            val text = if (senderName != null) "$senderName sedang mengetik..." else "sedang mengetik..."
+            Text(text, fontSize = 14.sp, color = checkGray)
         }
     }
 }
