@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.teguholica.chat.data.local.DatabaseDriverFactory
 import com.teguholica.chat.data.local.TokenStorage
 import com.teguholica.chat.di.initKoin
 
@@ -14,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        initKoin(TokenStorage(this), MediaPicker(this))
+        initKoin(TokenStorage(this), MediaPicker(this), DatabaseDriverFactory(this))
 
         setContent {
             App()

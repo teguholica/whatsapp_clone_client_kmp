@@ -7,8 +7,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.teguholica.chat.data.local.TokenStorage
-import com.teguholica.chat.data.remote.AuthApi
 import com.teguholica.chat.data.remote.NetworkClient
+import com.teguholica.chat.data.remote.ws.WsClient
+import com.teguholica.chat.data.remote.ws.WsEvent
 import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.ui.auth.AuthScreen
 import com.teguholica.chat.ui.chatdetail.ChatDetailScreen
@@ -16,6 +17,7 @@ import com.teguholica.chat.ui.chatlist.ChatListScreen
 import com.teguholica.chat.ui.creategroup.CreateGroupScreen
 import com.teguholica.chat.ui.newchat.NewChatScreen
 import com.teguholica.chat.ui.theme.ChatTheme
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 sealed class Screen {
@@ -32,34 +34,55 @@ fun App() {
     var screen by remember { mutableStateOf<Screen>(Screen.Auth) }
     val authRepository: AuthRepository = koinInject()
     val tokenStorage: TokenStorage = koinInject()
-    val authApi: AuthApi = koinInject()
+    val wsClient: WsClient = koinInject()
+    val scope = rememberCoroutineScope()
 
     NetworkClient.tokenStorage = tokenStorage
-    NetworkClient.authApi = authApi
 
     LaunchedEffect(Unit) {
+        wsClient.setTokenProvider { tokenStorage.getAccessToken() }
+
         if (authRepository.isLoggedIn()) {
+            wsClient.connect(this)
             screen = Screen.ChatList
         }
-        NetworkClient.sessionExpired.collect {
-            authRepository.logout()
-            screen = Screen.Auth
+
+        launch {
+            NetworkClient.sessionExpired.collect {
+                wsClient.disconnect()
+                authRepository.logout()
+                screen = Screen.Auth
+            }
+        }
+
+        launch {
+            wsClient.events.collect { event ->
+                if (event is WsEvent.SessionExpired) {
+                    wsClient.disconnect()
+                    authRepository.logout()
+                    screen = Screen.Auth
+                }
+            }
         }
     }
 
     ChatTheme(darkTheme = darkTheme) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars)) {
             Column {
                 Box(Modifier.fillMaxSize().weight(1f)) {
                     when (val current = screen) {
                         Screen.Auth -> AuthScreen(
-                            onAuthenticated = { screen = Screen.ChatList },
+                            onAuthenticated = {
+                                wsClient.connect(scope)
+                                screen = Screen.ChatList
+                            },
                         )
                         Screen.ChatList -> ChatListScreen(
                             onChatClick = { id, name, personal ->
                                 screen = Screen.ChatDetail(id, name, personal)
                             },
                             onLogout = {
+                                wsClient.disconnect()
                                 authRepository.logout()
                                 screen = Screen.Auth
                             },

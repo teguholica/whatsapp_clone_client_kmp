@@ -34,34 +34,34 @@ class CreateGroupViewModel(
     )
     val contacts: StateFlow<List<User>> = _contacts.asStateFlow()
 
-    private val _selectedIds = MutableStateFlow<Set<String>>(emptySet())
-    val selectedIds: StateFlow<Set<String>> = _selectedIds.asStateFlow()
+    private val _selectedPhones = MutableStateFlow<Set<String>>(emptySet())
+    val selectedPhones: StateFlow<Set<String>> = _selectedPhones.asStateFlow()
 
     fun updateGroupName(name: String) {
         _groupName.value = name
     }
 
-    fun toggleContact(userId: String) {
-        val current = _selectedIds.value.toMutableSet()
-        if (current.contains(userId)) current.remove(userId) else current.add(userId)
-        _selectedIds.value = current
+    fun toggleContact(phone: String) {
+        val current = _selectedPhones.value.toMutableSet()
+        if (current.contains(phone)) current.remove(phone) else current.add(phone)
+        _selectedPhones.value = current
     }
 
     fun createGroup() {
         val name = _groupName.value.trim()
-        val ids = _selectedIds.value.toList()
+        val phones = _selectedPhones.value.toList()
         if (name.isEmpty()) {
             _uiState.value = CreateGroupUiState.Error("Nama grup tidak boleh kosong")
             return
         }
-        if (ids.isEmpty()) {
+        if (phones.isEmpty()) {
             _uiState.value = CreateGroupUiState.Error("Pilih minimal 1 peserta")
             return
         }
 
         viewModelScope.launch {
             _uiState.value = CreateGroupUiState.Creating
-            val result = groupApi.create(name, ids)
+            val result = groupApi.create(name, phones)
             _uiState.value = result.fold(
                 onSuccess = { group ->
                     CreateGroupUiState.Success(conversationId = group.id)

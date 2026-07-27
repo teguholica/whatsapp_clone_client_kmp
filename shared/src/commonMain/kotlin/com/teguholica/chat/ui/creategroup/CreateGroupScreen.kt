@@ -25,7 +25,7 @@ fun CreateGroupScreen(
     val uiState by viewModel.uiState.collectAsState()
     val groupName by viewModel.groupName.collectAsState()
     val contacts by viewModel.contacts.collectAsState()
-    val selectedIds by viewModel.selectedIds.collectAsState()
+    val selectedPhones by viewModel.selectedPhones.collectAsState()
 
     LaunchedEffect(uiState) {
         if (uiState is CreateGroupUiState.Success) {
@@ -42,7 +42,7 @@ fun CreateGroupScreen(
             ) {
                 TextButton(onClick = onBack) { Text("←", fontSize = 18.sp) }
                 Text("Grup Baru", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, modifier = Modifier.weight(1f))
-                TextButton(onClick = { viewModel.createGroup() }, enabled = groupName.isNotBlank() && selectedIds.isNotEmpty()) {
+                TextButton(onClick = { viewModel.createGroup() }, enabled = groupName.isNotBlank() && selectedPhones.isNotEmpty()) {
                     Text("Buat")
                 }
             }
@@ -67,7 +67,7 @@ fun CreateGroupScreen(
                 )
 
                 Text(
-                    "Peserta (${selectedIds.size} dipilih)",
+                    "Peserta (${selectedPhones.size} dipilih)",
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -77,8 +77,8 @@ fun CreateGroupScreen(
                     items(contacts, key = { it.id }) { contact ->
                         ContactItem(
                             contact = contact,
-                            isSelected = selectedIds.contains(contact.id),
-                            onClick = { viewModel.toggleContact(contact.id) },
+                            isSelected = selectedPhones.contains(contact.phone ?: ""),
+                            onClick = { viewModel.toggleContact(contact.phone ?: "") },
                         )
                     }
                 }
@@ -96,7 +96,7 @@ private fun ContactItem(contact: User, isSelected: Boolean, onClick: () -> Unit)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val initial = (contact.displayName ?: contact.phone).firstOrNull()?.uppercase() ?: "?"
+        val initial = (contact.displayName ?: contact.phone ?: "").firstOrNull()?.uppercase() ?: "?"
         Box(
             modifier = Modifier
                 .size(44.dp)
@@ -109,7 +109,7 @@ private fun ContactItem(contact: User, isSelected: Boolean, onClick: () -> Unit)
 
         Spacer(Modifier.width(12.dp))
         Text(
-            text = contact.displayName ?: contact.phone,
+            text = contact.displayName ?: contact.phone ?: "",
             modifier = Modifier.weight(1f),
             fontSize = 16.sp,
         )

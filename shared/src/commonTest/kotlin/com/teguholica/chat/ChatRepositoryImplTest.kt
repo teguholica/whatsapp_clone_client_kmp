@@ -19,7 +19,7 @@ class ChatRepositoryImplTest {
     fun createPersonalConversation_returns_chat_and_updates_cache() = runBlocking {
         val repo = ChatRepositoryImpl(fakeApi)
 
-        val result = repo.createPersonalConversation("user_contact_1")
+        val result = repo.createPersonalConversation("+62811111111")
 
         assertTrue(result.isSuccess)
         val chat = result.getOrThrow()
@@ -27,6 +27,7 @@ class ChatRepositoryImplTest {
         assertEquals(ChatType.PERSONAL, chat.type)
         assertEquals("Budi", chat.name)
         assertEquals(1, chat.participants.size)
+        assertEquals("+62811111111", chat.participants.first().phone)
 
         val cached = repo.getCached()
         assertEquals(1, cached.size)
@@ -38,7 +39,7 @@ class ChatRepositoryImplTest {
         fakeApi.shouldFail = true
         val repo = ChatRepositoryImpl(fakeApi)
 
-        val result = repo.createPersonalConversation("user_unknown")
+        val result = repo.createPersonalConversation("+62899999999")
 
         assertTrue(result.isFailure)
         assertEquals("Gagal buat percakapan", result.exceptionOrNull()?.message)
@@ -56,8 +57,8 @@ private class FakeConversationApi : ConversationApi() {
             type = "PERSONAL",
             name = "Budi",
             participants = listOf(ParticipantDto(
-                id = participantId,
-                phone = "+62811111111",
+                id = "user_1",
+                phone = participantId,
                 displayName = "Budi",
             )),
             createdAt = "2025-01-01T00:00:00Z",

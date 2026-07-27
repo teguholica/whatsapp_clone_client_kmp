@@ -11,15 +11,18 @@ class ChatRepositoryImpl(
     private var cache: List<Chat> = emptyList()
     private var conversationIds: Set<String> = emptySet()
 
-    override suspend fun createPersonalConversation(participantId: String): Result<Chat> {
-        return conversationApi.create(participantId).map { dto ->
-            val participants = dto.participants.map { p ->
-                User(id = p.id, phone = p.phone, displayName = p.displayName, avatarUrl = p.avatarUrl)
+    override suspend fun createPersonalConversation(phone: String): Result<Chat> {
+        return conversationApi.create(phone).map { dto ->
+            val participants = dto.members.map { m ->
+                User(id = m.userId, displayName = m.displayName)
+            }
+            val chatName = dto.name.ifEmpty {
+                dto.members.firstOrNull()?.displayName ?: ""
             }
             val chat = Chat(
                 id = dto.id,
                 type = ChatType.PERSONAL,
-                name = dto.name,
+                name = chatName,
                 avatarUrl = dto.avatarUrl,
                 unreadCount = dto.unreadCount,
                 participants = participants,
@@ -45,13 +48,20 @@ class ChatRepositoryImpl(
                         createdAt = it.createdAt,
                     )
                 }
-                val participants = dto.participants.map { p ->
-                    User(id = p.id, phone = p.phone, displayName = p.displayName, avatarUrl = p.avatarUrl)
+                val participants = if (dto.members.isNotEmpty()) {
+                    dto.members.map { m -> User(id = m.userId, displayName = m.displayName) }
+                } else if (dto.otherUser != null) {
+                    listOf(User(id = dto.otherUser.id, displayName = dto.otherUser.displayName))
+                } else {
+                    emptyList()
+                }
+                val chatName = dto.name.ifEmpty {
+                    dto.otherUser?.displayName ?: dto.members.firstOrNull()?.displayName ?: ""
                 }
                 Chat(
                     id = dto.id,
                     type = type,
-                    name = dto.name,
+                    name = chatName,
                     avatarUrl = dto.avatarUrl,
                     lastMessage = lastMsg,
                     unreadCount = dto.unreadCount,

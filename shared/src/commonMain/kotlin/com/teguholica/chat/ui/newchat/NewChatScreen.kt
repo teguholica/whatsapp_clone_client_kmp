@@ -23,6 +23,7 @@ fun NewChatScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val showAddDialog by viewModel.showAddDialog.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.loadContacts() }
 
@@ -41,6 +42,7 @@ fun NewChatScreen(
             ) {
                 TextButton(onClick = onBack) { Text("←", fontSize = 18.sp) }
                 Text("Kontak", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                TextButton(onClick = { viewModel.showAddDialog() }) { Text("+", fontSize = 18.sp) }
             }
         }
 
@@ -71,7 +73,7 @@ fun NewChatScreen(
                         items(state.filtered, key = { it.id }) { contact ->
                             ContactRow(
                                 contact = contact,
-                                onClick = { viewModel.createOrNavigate(contact.id) },
+                                onClick = { viewModel.createOrNavigate(contact.phone) },
                             )
                         }
                     }
@@ -91,6 +93,58 @@ fun NewChatScreen(
             is NewChatUiState.Created -> { }
         }
     }
+
+    if (showAddDialog) {
+        AddContactDialog(
+            onDismiss = { viewModel.hideAddDialog() },
+            onConfirm = { name, phone -> viewModel.addContact(name, phone) },
+        )
+    }
+}
+
+@Composable
+private fun AddContactDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, phone: String) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tambah Kontak") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nama") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Nomor Telepon") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(name, phone) },
+                enabled = name.isNotBlank() && phone.isNotBlank(),
+            ) {
+                Text("Simpan")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal")
+            }
+        },
+    )
 }
 
 @Composable
@@ -115,14 +169,24 @@ private fun ContactRow(contact: ContactDisplay, onClick: () -> Unit) {
 
         Spacer(Modifier.width(12.dp))
 
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(contact.displayName, fontSize = 16.sp)
-            if (contact.phone.isNotBlank()) {
-                Text(
-                    contact.phone,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (contact.phone.isNotBlank()) {
+                    Text(
+                        contact.phone,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (contact.userId != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Terdaftar",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }

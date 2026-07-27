@@ -67,25 +67,6 @@ class AuthApi {
         }
     }
 
-    suspend fun refreshToken(refreshToken: String): Result<VerifyResponse> {
-        return try {
-            val response = client.post("$baseUrl/api/auth/refresh") {
-                contentType(ContentType.Application.Json)
-                setBody(RefreshTokenRequest(refreshToken))
-            }
-            if (!response.status.isSuccess()) {
-                val code = response.status.value
-                Result.failure(AuthApiException(code, "Gagal refresh token ($code)"))
-            } else {
-                Result.success(response.body())
-            }
-        } catch (e: AuthApiException) {
-            Result.failure(e)
-        } catch (e: Exception) {
-            Result.failure(AuthApiException(0, "Gagal refresh token: ${e.message}"))
-        }
-    }
-
     private suspend fun tryParseError(response: io.ktor.client.statement.HttpResponse): String? {
         return try {
             val error = response.body<ErrorResponse>()

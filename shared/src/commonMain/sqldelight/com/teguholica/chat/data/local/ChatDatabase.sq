@@ -38,6 +38,14 @@ CREATE TABLE IF NOT EXISTS ChatParticipantEntity (
     PRIMARY KEY (chatId, userId)
 );
 
+CREATE TABLE IF NOT EXISTS ContactEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    phone TEXT NOT NULL,
+    displayName TEXT NOT NULL,
+    avatarUrl TEXT,
+    createdAt TEXT NOT NULL
+);
+
 selectAllChats:
 SELECT * FROM ChatEntity ORDER BY createdAt DESC;
 
@@ -74,6 +82,24 @@ selectParticipantsByChatId:
 SELECT u.* FROM UserEntity u
 INNER JOIN ChatParticipantEntity cp ON cp.userId = u.id
 WHERE cp.chatId = ?;
+
+selectAllContacts:
+SELECT * FROM ContactEntity ORDER BY displayName ASC;
+
+selectContactById:
+SELECT * FROM ContactEntity WHERE id = ?;
+
+insertContact:
+INSERT OR REPLACE INTO ContactEntity(id, phone, displayName, avatarUrl, createdAt)
+VALUES (?, ?, ?, ?, ?);
+
+deleteContact:
+DELETE FROM ContactEntity WHERE id = ?;
+
+searchContacts:
+SELECT * FROM ContactEntity
+WHERE displayName LIKE '%' || ? || '%' OR phone LIKE '%' || ? || '%'
+ORDER BY displayName ASC;
 
 deleteChat:
 DELETE FROM ChatEntity WHERE id = ?;

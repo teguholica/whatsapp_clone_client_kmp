@@ -42,23 +42,18 @@ fun AuthScreen(
             onVerifyOtp = viewModel::verifyOtp,
             error = null,
         )
-        is AuthUiState.Error -> {
-            if (otp.isNotEmpty()) {
-                OtpInputScreen(
-                    otp = otp,
-                    onOtpChange = viewModel::updateOtp,
-                    onVerifyOtp = viewModel::verifyOtp,
-                    error = state.message,
-                )
-            } else {
-                PhoneInputScreen(
-                    phone = phone,
-                    onPhoneChange = viewModel::updatePhone,
-                    onRequestOtp = viewModel::requestOtp,
-                    error = state.message,
-                )
-            }
-        }
+        is AuthUiState.OtpError -> OtpInputScreen(
+            otp = otp,
+            onOtpChange = viewModel::updateOtp,
+            onVerifyOtp = viewModel::verifyOtp,
+            error = state.message,
+        )
+        is AuthUiState.PhoneError -> PhoneInputScreen(
+            phone = phone,
+            onPhoneChange = viewModel::updatePhone,
+            onRequestOtp = viewModel::requestOtp,
+            error = state.message,
+        )
         is AuthUiState.Authenticated -> { }
     }
 }

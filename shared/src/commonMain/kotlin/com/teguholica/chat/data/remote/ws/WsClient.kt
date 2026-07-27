@@ -18,6 +18,7 @@ sealed interface WsEvent {
     data class Presence(val data: PresenceData) : WsEvent
     data object Connected : WsEvent
     data object Disconnected : WsEvent
+    data object SessionExpired : WsEvent
     data class Error(val message: String) : WsEvent
 }
 
@@ -61,7 +62,9 @@ class WsClient {
                 }
 
                 _connectionState.value = WsConnectionState.Connecting
-                val wsUrl = "${ApiConfig.baseUrl.replace("http", "ws")}:3000?token=$token"
+                val wsUrl = "${ApiConfig.baseUrl.replace("http", "ws")}?token=$token"
+
+                var shouldReauth = false
 
                 try {
                     client.webSocket(wsUrl) {
@@ -77,6 +80,11 @@ class WsClient {
                                 handleFrame(frame.readText())
                             }
                         }
+
+                        try {
+                            val reason = closeReason.await()
+                            shouldReauth = reason?.code == 4001.toShort()
+                        } catch (_: Exception) { }
                     }
                 } catch (_: CancellationException) {
                     break
@@ -86,6 +94,11 @@ class WsClient {
 
                 _connectionState.value = WsConnectionState.Disconnected
                 _events.emit(WsEvent.Disconnected)
+
+                if (shouldReauth) {
+                    _events.emit(WsEvent.SessionExpired)
+                    break
+                }
 
                 delay(retryDelay)
                 retryDelay = (retryDelay * 2).coerceAtMost(maxDelay)

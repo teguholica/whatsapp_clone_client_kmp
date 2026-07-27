@@ -1,27 +1,20 @@
 package com.teguholica.chat.data.remote
 
-import com.teguholica.chat.data.remote.dto.MessageResponseDto
-import com.teguholica.chat.data.remote.dto.SendMessageRequest
+import com.teguholica.chat.data.remote.dto.UpdateProfileRequest
+import com.teguholica.chat.data.remote.dto.UserProfileDto
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 
-class MessageApi {
+class UserApi {
     private val client get() = NetworkClient.httpClient
     private val baseUrl get() = ApiConfig.baseUrl
 
-    suspend fun getMessages(
-        conversationId: String,
-        limit: Int = 50,
-        before: String? = null,
-    ): Result<List<MessageResponseDto>> {
+    suspend fun getMe(): Result<UserProfileDto> {
         return try {
-            val response = client.get("$baseUrl/api/messages/$conversationId") {
-                parameter("limit", limit)
-                before?.let { parameter("before", it) }
-            }
+            val response = client.get("$baseUrl/api/users/me")
             if (!response.status.isSuccess()) {
-                Result.failure(AuthApiException(response.status.value, "Gagal ambil pesan"))
+                Result.failure(AuthApiException(response.status.value, "Gagal ambil profil"))
             } else {
                 Result.success(response.body())
             }
@@ -32,18 +25,14 @@ class MessageApi {
         }
     }
 
-    suspend fun sendMessage(
-        conversationId: String,
-        type: String,
-        content: String,
-    ): Result<MessageResponseDto> {
+    suspend fun updateMe(displayName: String? = null, avatarUrl: String? = null): Result<UserProfileDto> {
         return try {
-            val response = client.post("$baseUrl/api/messages/$conversationId") {
+            val response = client.put("$baseUrl/api/users/me") {
                 contentType(ContentType.Application.Json)
-                setBody(SendMessageRequest(type = type, content = content))
+                setBody(UpdateProfileRequest(displayName, avatarUrl))
             }
             if (!response.status.isSuccess()) {
-                Result.failure(AuthApiException(response.status.value, "Gagal kirim pesan"))
+                Result.failure(AuthApiException(response.status.value, "Gagal update profil"))
             } else {
                 Result.success(response.body())
             }
@@ -54,15 +43,16 @@ class MessageApi {
         }
     }
 
-    suspend fun delete(messageId: String, mode: String): Result<Unit> {
+    suspend fun searchByPhone(query: String): Result<List<UserProfileDto>> {
         return try {
-            val response = client.delete("$baseUrl/api/messages/$messageId") {
-                parameter("mode", mode)
+            if (query.isBlank()) return Result.success(emptyList())
+            val response = client.get("$baseUrl/api/users/search") {
+                parameter("phone", query)
             }
             if (!response.status.isSuccess()) {
-                Result.failure(AuthApiException(response.status.value, "Gagal hapus pesan"))
+                Result.failure(AuthApiException(response.status.value, "Gagal cari user"))
             } else {
-                Result.success(Unit)
+                Result.success(response.body())
             }
         } catch (e: AuthApiException) {
             Result.failure(e)

@@ -4,19 +4,32 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreateConversationRequest(
-    val participantId: String,
+    val phone: String,
 )
 
 @Serializable
 data class ConversationDto(
     val id: String,
     val type: String,
-    val name: String,
+    val name: String = "",
     val avatarUrl: String? = null,
     val lastMessage: LastMessageDto? = null,
     val unreadCount: Int = 0,
-    val participants: List<ParticipantDto> = emptyList(),
+    val otherUser: OtherUserDto? = null,
+    val members: List<MemberDto> = emptyList(),
     val createdAt: String,
+)
+
+@Serializable
+data class OtherUserDto(
+    val id: String,
+    val displayName: String? = null,
+)
+
+@Serializable
+data class MemberDto(
+    val userId: String,
+    val displayName: String? = null,
 )
 
 @Serializable
@@ -26,12 +39,4 @@ data class LastMessageDto(
     val type: String,
     val senderId: String,
     val createdAt: String,
-)
-
-@Serializable
-data class ParticipantDto(
-    val id: String,
-    val phone: String,
-    val displayName: String? = null,
-    val avatarUrl: String? = null,
 )

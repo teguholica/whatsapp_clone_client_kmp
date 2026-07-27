@@ -14,7 +14,8 @@ sealed interface AuthUiState {
     data object PhoneInput : AuthUiState
     data object OtpSent : AuthUiState
     data object Authenticated : AuthUiState
-    data class Error(val message: String) : AuthUiState
+    data class OtpError(val message: String) : AuthUiState
+    data class PhoneError(val message: String) : AuthUiState
 }
 
 class AuthViewModel(
@@ -44,10 +45,12 @@ class AuthViewModel(
 
     fun updatePhone(phone: String) {
         _phone.value = phone
+        clearError()
     }
 
     fun updateOtp(otp: String) {
         _otp.value = otp
+        clearError()
     }
 
     fun requestOtp() {
@@ -55,13 +58,13 @@ class AuthViewModel(
             _uiState.value = AuthUiState.Loading
             val phone = _phone.value
             if (phone.isBlank()) {
-                _uiState.value = AuthUiState.Error("Nomor telepon tidak boleh kosong")
+                _uiState.value = AuthUiState.PhoneError("Nomor telepon tidak boleh kosong")
                 return@launch
             }
             val result = authRepository.register(phone)
             _uiState.value = result.fold(
                 onSuccess = { AuthUiState.OtpSent },
-                onFailure = { error -> AuthUiState.Error(errorMessage(error)) },
+                onFailure = { error -> AuthUiState.PhoneError(errorMessage(error)) },
             )
         }
     }
@@ -72,13 +75,13 @@ class AuthViewModel(
             val phone = _phone.value
             val otp = _otp.value
             if (otp.isBlank()) {
-                _uiState.value = AuthUiState.Error("Kode OTP tidak boleh kosong")
+                _uiState.value = AuthUiState.OtpError("Kode OTP tidak boleh kosong")
                 return@launch
             }
             val result = authRepository.verify(phone, otp)
             _uiState.value = result.fold(
                 onSuccess = { AuthUiState.Authenticated },
-                onFailure = { error -> AuthUiState.Error(errorMessage(error)) },
+                onFailure = { error -> AuthUiState.OtpError(errorMessage(error)) },
             )
         }
     }
@@ -96,9 +99,10 @@ class AuthViewModel(
 
     fun clearError() {
         val current = _uiState.value
-        if (current is AuthUiState.Error) {
-            _uiState.value = if (_otp.value.isNotEmpty()) AuthUiState.OtpSent
-            else AuthUiState.PhoneInput
+        when (current) {
+            is AuthUiState.OtpError -> _uiState.value = AuthUiState.OtpSent
+            is AuthUiState.PhoneError -> _uiState.value = AuthUiState.PhoneInput
+            else -> {}
         }
     }
 }

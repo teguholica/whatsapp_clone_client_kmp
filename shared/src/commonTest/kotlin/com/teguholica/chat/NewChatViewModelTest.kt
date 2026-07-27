@@ -1,13 +1,16 @@
 package com.teguholica.chat
 
-import com.teguholica.chat.data.remote.ContactApi
-import com.teguholica.chat.data.remote.dto.ParticipantDto
 import com.teguholica.chat.domain.model.Chat
 import com.teguholica.chat.domain.model.ChatType
+import com.teguholica.chat.domain.model.Contact
 import com.teguholica.chat.domain.model.User
 import com.teguholica.chat.domain.repository.ChatRepository
+import com.teguholica.chat.domain.repository.ContactRepository
 import com.teguholica.chat.ui.newchat.NewChatUiState
 import com.teguholica.chat.ui.newchat.NewChatViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import kotlin.test.Test
@@ -16,12 +19,12 @@ import kotlin.test.assertTrue
 
 class NewChatViewModelTest {
 
-    private val fakeApi = FakeContactApi3()
-    private val fakeRepo = FakeChatRepository3()
+    private val fakeRepo = FakeContactRepository()
+    private val fakeChatRepo = FakeChatRepository3()
 
     @Test
     fun loadContacts_populates_ui_state_with_contacts() = runBlocking {
-        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
         vm.loadContacts()
         yield()
 
@@ -34,7 +37,7 @@ class NewChatViewModelTest {
 
     @Test
     fun searchQuery_filters_contacts() = runBlocking {
-        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
         vm.loadContacts()
         yield()
         vm.updateSearchQuery("Budi")
@@ -46,15 +49,16 @@ class NewChatViewModelTest {
 
     @Test
     fun createOrNavigate_existing_contact_returns_existing_chat() = runBlocking {
-        fakeRepo.existingChat = Chat(
+        fakeChatRepo.existingChat = Chat(
             id = "existing_chat_1",
             type = ChatType.PERSONAL,
             name = "Budi",
             participants = listOf(User(id = "contact_budi", phone = "+62811111111", displayName = "Budi")),
             createdAt = "2025-01-01T00:00:00Z",
         )
-        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
         vm.createOrNavigate("contact_budi")
+        yield()
 
         val state = vm.uiState.value
         assertTrue(state is NewChatUiState.Created)
@@ -63,7 +67,7 @@ class NewChatViewModelTest {
 
     @Test
     fun createOrNavigate_new_contact_creates_conversation() = runBlocking {
-        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
         vm.createOrNavigate("contact_siti")
         yield()
 
@@ -73,11 +77,21 @@ class NewChatViewModelTest {
     }
 }
 
-private class FakeContactApi3 : ContactApi() {
-    override suspend fun getAll() = Result.success(listOf(
-        ParticipantDto(id = "contact_budi", phone = "+62811111111", displayName = "Budi"),
-        ParticipantDto(id = "contact_siti", phone = "+62822222222", displayName = "Siti"),
-    ))
+private class FakeContactRepository : ContactRepository {
+    private val contacts = listOf(
+        Contact(id = "contact_budi", phone = "+62811111111", displayName = "Budi"),
+        Contact(id = "contact_siti", phone = "+62822222222", displayName = "Siti"),
+    )
+
+    override suspend fun getAll(): List<Contact> = contacts
+
+    override suspend fun getById(id: String): Contact? = contacts.find { it.id == id }
+
+    override suspend fun save(contact: Contact) {}
+
+    override suspend fun delete(id: String) {}
+
+    override fun observeAll(): Flow<List<Contact>> = emptyFlow()
 }
 
 private class FakeChatRepository3 : ChatRepository {
@@ -90,7 +104,7 @@ private class FakeChatRepository3 : ChatRepository {
             id = "conv_siti",
             type = ChatType.PERSONAL,
             name = "Siti",
-            participants = listOf(User(id = participantId, phone = "+62822222222", displayName = "Siti")),
+            participants = listOf(User(id = "contact_siti", phone = participantId, displayName = "Siti")),
             createdAt = "2025-01-01T00:00:00Z",
         )
         chats.add(chat)

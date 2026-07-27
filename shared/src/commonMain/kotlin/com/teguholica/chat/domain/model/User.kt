@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class User(
     val id: String,
-    val phone: String,
+    val phone: String? = null,
     val displayName: String? = null,
     val avatarUrl: String? = null,
     val presence: Presence? = null,
