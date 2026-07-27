@@ -6,6 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.teguholica.chat.data.local.TokenStorage
+import com.teguholica.chat.data.remote.AuthApi
 import com.teguholica.chat.data.remote.NetworkClient
 import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.ui.auth.AuthScreen
@@ -29,6 +31,11 @@ fun App() {
     var darkTheme by remember { mutableStateOf(false) }
     var screen by remember { mutableStateOf<Screen>(Screen.Auth) }
     val authRepository: AuthRepository = koinInject()
+    val tokenStorage: TokenStorage = koinInject()
+    val authApi: AuthApi = koinInject()
+
+    NetworkClient.tokenStorage = tokenStorage
+    NetworkClient.authApi = authApi
 
     LaunchedEffect(Unit) {
         if (authRepository.isLoggedIn()) {
