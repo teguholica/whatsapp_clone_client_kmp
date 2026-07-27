@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teguholica.chat.domain.model.Chat
+import com.teguholica.chat.domain.model.ChatType
 import com.teguholica.chat.domain.model.MessageType
 import com.teguholica.chat.domain.model.PresenceStatus
 import org.koin.compose.koinInject
@@ -167,27 +168,34 @@ private fun ChatListItem(
 @Composable
 private fun AvatarWithPresence(chat: Chat) {
     Box {
-        val name = chat.name
-        val initial = name.firstOrNull()?.uppercase() ?: "?"
+        val avatarText = if (chat.type == ChatType.GROUP) {
+            val words = chat.name.split(" ").filter { it.isNotBlank() }
+            if (words.size >= 2) "${words[0].first().uppercase()}${words[1].first().uppercase()}"
+            else words.firstOrNull()?.take(2)?.uppercase() ?: "G"
+        } else {
+            chat.name.firstOrNull()?.uppercase() ?: "?"
+        }
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .background(if (chat.type == ChatType.GROUP) Color(0xFF25D366) else MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Text(initial, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(avatarText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = if (chat.type == ChatType.GROUP) Color.White else Color.Unspecified)
         }
 
-        val anyOnline = chat.participants.any { it.presence?.status == PresenceStatus.ONLINE }
-        if (anyOnline) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF25D366))
-                    .align(Alignment.BottomEnd),
-            )
+        if (chat.type == ChatType.PERSONAL) {
+            val anyOnline = chat.participants.any { it.presence?.status == PresenceStatus.ONLINE }
+            if (anyOnline) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF25D366))
+                        .align(Alignment.BottomEnd),
+                )
+            }
         }
     }
 }

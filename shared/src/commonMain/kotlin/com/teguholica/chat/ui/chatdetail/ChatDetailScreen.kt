@@ -97,11 +97,15 @@ fun ChatDetailScreen(
                         MessageBubble(
                             message = message,
                             isMine = message.senderId == currentUserId,
+                            showSenderName = !personal && message.senderId != currentUserId,
                         )
                     }
 
-                    state.typingUserId?.let {
-                        item { TypingBubble() }
+                    state.typingUserId?.let { userId ->
+                        item {
+                            if (personal) TypingBubble(senderName = null)
+                            else TypingBubble(senderName = userId)
+                        }
                     }
                 }
 
@@ -137,7 +141,7 @@ private fun ChatDetailHeader(name: String, onBack: () -> Unit) {
 }
 
 @Composable
-private fun MessageBubble(message: Message, isMine: Boolean) {
+private fun MessageBubble(message: Message, isMine: Boolean, showSenderName: Boolean = false) {
     val alignment = if (isMine) Alignment.End else Alignment.Start
     val bgColor = if (isMine) greenBubble else whiteBubble
     val shape = RoundedCornerShape(
@@ -157,6 +161,15 @@ private fun MessageBubble(message: Message, isMine: Boolean) {
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
             Column {
+                if (showSenderName) {
+                    Text(
+                        text = message.senderId,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                }
                 Text(
                     text = message.content,
                     fontSize = 15.sp,
@@ -198,7 +211,7 @@ private fun StatusIcon(status: MessageStatus) {
 }
 
 @Composable
-private fun TypingBubble() {
+private fun TypingBubble(senderName: String?) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
     ) {
@@ -207,7 +220,8 @@ private fun TypingBubble() {
                 .background(whiteBubble, RoundedCornerShape(12.dp, 12.dp, 4.dp, 12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            Text("sedang mengetik...", fontSize = 14.sp, color = checkGray)
+            val typingText = if (senderName != null) "$senderName sedang mengetik..." else "sedang mengetik..."
+            Text(typingText, fontSize = 14.sp, color = checkGray)
         }
     }
 }
