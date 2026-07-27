@@ -16,10 +16,9 @@ class MediaUploadApi {
     private val client get() = NetworkClient.httpClient
     private val baseUrl get() = ApiConfig.baseUrl
 
-    suspend fun upload(token: String, file: MediaFile): Result<MediaUploadResponse> {
+    suspend fun upload(file: MediaFile): Result<MediaUploadResponse> {
         return try {
             val response = client.post("$baseUrl/api/media/upload") {
-                bearerAuth(token)
                 setBody(MultiPartFormDataContent(formData {
                     append("file", file.bytes, Headers.build {
                         append(HttpHeaders.ContentType, file.mimeType)

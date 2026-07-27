@@ -3,7 +3,6 @@ package com.teguholica.chat.ui.creategroup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teguholica.chat.data.remote.GroupApi
-import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.domain.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +18,6 @@ sealed interface CreateGroupUiState {
 
 class CreateGroupViewModel(
     private val groupApi: GroupApi,
-    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CreateGroupUiState>(CreateGroupUiState.Idle)
@@ -63,8 +61,7 @@ class CreateGroupViewModel(
 
         viewModelScope.launch {
             _uiState.value = CreateGroupUiState.Creating
-            val token = authRepository.getSavedAccessToken() ?: return@launch
-            val result = groupApi.create(token, name, ids)
+            val result = groupApi.create(name, ids)
             _uiState.value = result.fold(
                 onSuccess = { group ->
                     CreateGroupUiState.Success(conversationId = group.id)

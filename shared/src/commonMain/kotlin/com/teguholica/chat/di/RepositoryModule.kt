@@ -30,13 +30,12 @@ val repositoryModule = module {
     single<ChatRepository> {
         ChatRepositoryImpl(
             conversationApi = get(),
-            authRepository = get(),
         )
     }
 
     factory { AuthViewModel(get()) }
     factory { ChatListViewModel(get(), get(), get()) }
-    factory { ChatDetailViewModel(get(), get(), get(), get(), get()) }
-    factory { CreateGroupViewModel(get(), get()) }
-    factory { NewChatViewModel(get(), get(), get()) }
+    factory { ChatDetailViewModel(get(), get(), get(), get()) }
+    factory { CreateGroupViewModel(get()) }
+    factory { NewChatViewModel(get(), get()) }
 }

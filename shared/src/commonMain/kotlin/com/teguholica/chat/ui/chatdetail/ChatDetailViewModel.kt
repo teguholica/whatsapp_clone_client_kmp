@@ -8,9 +8,9 @@ import com.teguholica.chat.data.remote.MessageApi
 import com.teguholica.chat.data.remote.dto.MessageResponseDto
 import com.teguholica.chat.data.remote.ws.MessageNewData
 import com.teguholica.chat.data.remote.ws.WsClient
+import com.teguholica.chat.data.remote.NetworkClient
 import com.teguholica.chat.data.remote.ws.WsEvent
 import com.teguholica.chat.domain.model.*
-import com.teguholica.chat.domain.repository.AuthRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +30,6 @@ sealed interface ChatDetailUiState {
 
 class ChatDetailViewModel(
     private val messageApi: MessageApi,
-    private val authRepository: AuthRepository,
     private val wsClient: WsClient,
     private val mediaUploadApi: MediaUploadApi,
     private val mediaPicker: MediaPicker,
@@ -62,8 +61,7 @@ class ChatDetailViewModel(
 
     private fun loadMessages(before: String? = null) {
         viewModelScope.launch {
-            val token = authRepository.getSavedAccessToken() ?: return@launch
-            val result = messageApi.getMessages(token, conversationId, before = before)
+            val result = messageApi.getMessages(conversationId, before = before)
             result.fold(
                 onSuccess = { dtos ->
                     val msgs = dtos.map { it.toDomain(conversationId) }
@@ -97,8 +95,7 @@ class ChatDetailViewModel(
         _draft.value = ""
 
         viewModelScope.launch {
-            val token = authRepository.getSavedAccessToken() ?: return@launch
-            messageApi.sendMessage(token, conversationId, "text", text)
+            messageApi.sendMessage(conversationId, "text", text)
         }
     }
 
@@ -134,8 +131,7 @@ class ChatDetailViewModel(
             } ?: return@launch
 
             _isUploading.value = true
-            val token = authRepository.getSavedAccessToken() ?: return@launch
-            val result = mediaUploadApi.upload(token, file)
+            val result = mediaUploadApi.upload(file)
             result.fold(
                 onSuccess = { media ->
                     val content = """{"mediaId":"${media.id}","url":"${media.url}"}"""
@@ -144,7 +140,7 @@ class ChatDetailViewModel(
                         file.mimeType.startsWith("video") -> "video"
                         else -> "document"
                     }
-                    messageApi.sendMessage(token, conversationId, msgType, content)
+                    messageApi.sendMessage(conversationId, msgType, content)
                 },
                 onFailure = {
                     _uiState.value = ChatDetailUiState.Error(it.message ?: "Gagal upload")
@@ -242,8 +238,9 @@ class ChatDetailViewModel(
         viewModelScope.launch {
             val current = _uiState.value
             if (current is ChatDetailUiState.Success) {
+                val userId = NetworkClient.tokenStorage.getUserId()
                 val unreadIds = current.messages
-                    .filter { it.status != MessageStatus.READ && it.senderId != authRepository.getSavedUserId() }
+                    .filter { it.status != MessageStatus.READ && it.senderId != userId }
                     .map { it.id }
                 unreadIds.forEach { wsClient.sendMessageRead(it) }
             }

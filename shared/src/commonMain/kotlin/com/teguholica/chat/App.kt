@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.teguholica.chat.data.remote.NetworkClient
 import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.ui.auth.AuthScreen
 import com.teguholica.chat.ui.chatdetail.ChatDetailScreen
@@ -32,6 +33,10 @@ fun App() {
     LaunchedEffect(Unit) {
         if (authRepository.isLoggedIn()) {
             screen = Screen.ChatList
+        }
+        NetworkClient.sessionExpired.collect {
+            authRepository.logout()
+            screen = Screen.Auth
         }
     }
 

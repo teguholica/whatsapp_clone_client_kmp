@@ -2,21 +2,17 @@ package com.teguholica.chat.data.repository
 
 import com.teguholica.chat.data.remote.ConversationApi
 import com.teguholica.chat.domain.model.*
-import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.domain.repository.ChatRepository
 
 class ChatRepositoryImpl(
     private val conversationApi: ConversationApi,
-    private val authRepository: AuthRepository,
 ) : ChatRepository {
 
     private var cache: List<Chat> = emptyList()
     private var conversationIds: Set<String> = emptySet()
 
     override suspend fun createPersonalConversation(participantId: String): Result<Chat> {
-        val token = authRepository.getSavedAccessToken()
-            ?: return Result.failure(Exception("Belum login"))
-        return conversationApi.create(token, participantId).map { dto ->
+        return conversationApi.create(participantId).map { dto ->
             val participants = dto.participants.map { p ->
                 User(id = p.id, phone = p.phone, displayName = p.displayName, avatarUrl = p.avatarUrl)
             }
@@ -36,9 +32,7 @@ class ChatRepositoryImpl(
     }
 
     override suspend fun getAll(): Result<List<Chat>> {
-        val token = authRepository.getSavedAccessToken()
-            ?: return Result.failure(Exception("Belum login"))
-        return conversationApi.getAll(token).map { dtos ->
+        return conversationApi.getAll().map { dtos ->
             val chats = dtos.map { dto ->
                 val type = if (dto.type == "GROUP") ChatType.GROUP else ChatType.PERSONAL
                 val lastMsg = dto.lastMessage?.let {

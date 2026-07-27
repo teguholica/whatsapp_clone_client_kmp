@@ -9,11 +9,9 @@ open class ContactApi {
     private val client get() = NetworkClient.httpClient
     private val baseUrl get() = ApiConfig.baseUrl
 
-    open suspend fun getAll(token: String): Result<List<ParticipantDto>> {
+    open suspend fun getAll(): Result<List<ParticipantDto>> {
         return try {
-            val response = client.get("$baseUrl/api/contacts") {
-                bearerAuth(token)
-            }
+            val response = client.get("$baseUrl/api/contacts")
             if (!response.status.isSuccess()) {
                 val code = response.status.value
                 Result.failure(AuthApiException(code, "Gagal ambil daftar kontak ($code)"))

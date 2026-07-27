@@ -9,10 +9,9 @@ open class ConversationApi {
     private val client get() = NetworkClient.httpClient
     private val baseUrl get() = ApiConfig.baseUrl
 
-    open suspend fun create(token: String, participantId: String): Result<ConversationDto> {
+    open suspend fun create(participantId: String): Result<ConversationDto> {
         return try {
             val response = client.post("$baseUrl/api/conversations") {
-                bearerAuth(token)
                 contentType(ContentType.Application.Json)
                 setBody(CreateConversationRequest(participantId))
             }
@@ -28,11 +27,9 @@ open class ConversationApi {
         }
     }
 
-    suspend fun getAll(token: String): Result<List<ConversationDto>> {
+    suspend fun getAll(): Result<List<ConversationDto>> {
         return try {
-            val response = client.get("$baseUrl/api/conversations") {
-                bearerAuth(token)
-            }
+            val response = client.get("$baseUrl/api/conversations")
             if (!response.status.isSuccess()) {
                 val code = response.status.value
                 Result.failure(AuthApiException(code, "Gagal ambil daftar chat ($code)"))
@@ -46,11 +43,9 @@ open class ConversationApi {
         }
     }
 
-    suspend fun getById(token: String, id: String): Result<ConversationDto> {
+    suspend fun getById(id: String): Result<ConversationDto> {
         return try {
-            val response = client.get("$baseUrl/api/conversations/$id") {
-                bearerAuth(token)
-            }
+            val response = client.get("$baseUrl/api/conversations/$id")
             if (!response.status.isSuccess()) {
                 val code = response.status.value
                 Result.failure(AuthApiException(code, "Gagal ambil chat ($code)"))

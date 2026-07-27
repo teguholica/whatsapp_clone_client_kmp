@@ -10,10 +10,9 @@ class GroupApi {
     private val client get() = NetworkClient.httpClient
     private val baseUrl get() = ApiConfig.baseUrl
 
-    suspend fun create(token: String, name: String, participantIds: List<String>): Result<GroupResponseDto> {
+    suspend fun create(name: String, participantIds: List<String>): Result<GroupResponseDto> {
         return try {
             val response = client.post("$baseUrl/api/groups") {
-                bearerAuth(token)
                 contentType(ContentType.Application.Json)
                 setBody(CreateGroupRequest(name, participantIds))
             }
@@ -29,11 +28,9 @@ class GroupApi {
         }
     }
 
-    suspend fun getById(token: String, id: String): Result<GroupResponseDto> {
+    suspend fun getById(id: String): Result<GroupResponseDto> {
         return try {
-            val response = client.get("$baseUrl/api/groups/$id") {
-                bearerAuth(token)
-            }
+            val response = client.get("$baseUrl/api/groups/$id")
             if (!response.status.isSuccess()) {
                 Result.failure(AuthApiException(response.status.value, "Gagal ambil grup"))
             } else {

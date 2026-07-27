@@ -17,6 +17,9 @@ data class VerifyResponse(
 )
 
 @Serializable
+data class RefreshTokenRequest(val refreshToken: String)
+
+@Serializable
 data class ErrorResponse(
     val message: String,
     val error: String? = null,

@@ -6,8 +6,6 @@ import com.teguholica.chat.data.remote.dto.ParticipantDto
 import com.teguholica.chat.data.repository.ChatRepositoryImpl
 import com.teguholica.chat.domain.model.ChatType
 import com.teguholica.chat.domain.model.User
-import com.teguholica.chat.domain.repository.AuthRepository
-import com.teguholica.chat.domain.repository.AuthResult
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,12 +13,11 @@ import kotlin.test.assertTrue
 
 class ChatRepositoryImplTest {
 
-    private val fakeAuth = FakeAuthRepository()
     private val fakeApi = FakeConversationApi()
 
     @Test
     fun createPersonalConversation_returns_chat_and_updates_cache() = runBlocking {
-        val repo = ChatRepositoryImpl(fakeApi, fakeAuth)
+        val repo = ChatRepositoryImpl(fakeApi)
 
         val result = repo.createPersonalConversation("user_contact_1")
 
@@ -39,7 +36,7 @@ class ChatRepositoryImplTest {
     @Test
     fun createPersonalConversation_propagates_api_error() = runBlocking {
         fakeApi.shouldFail = true
-        val repo = ChatRepositoryImpl(fakeApi, fakeAuth)
+        val repo = ChatRepositoryImpl(fakeApi)
 
         val result = repo.createPersonalConversation("user_unknown")
 
@@ -48,22 +45,10 @@ class ChatRepositoryImplTest {
     }
 }
 
-private class FakeAuthRepository : AuthRepository {
-    override suspend fun register(phone: String) = Result.success(Unit)
-    override suspend fun verify(phone: String, otp: String) =
-        Result.success(AuthResult("fake_access", "fake_refresh", User("fake_id", "+628123456789")))
-    override fun getSavedAccessToken() = "fake_token"
-    override fun getSavedRefreshToken() = "fake_refresh"
-    override fun getSavedUserId() = "fake_user"
-    override fun getSavedPhone() = "+628123456789"
-    override fun isLoggedIn() = true
-    override fun logout() {}
-}
-
 private class FakeConversationApi : ConversationApi() {
     var shouldFail = false
 
-    override suspend fun create(token: String, participantId: String) = if (shouldFail) {
+    override suspend fun create(participantId: String) = if (shouldFail) {
         Result.failure(Exception("Gagal buat percakapan"))
     } else {
         Result.success(ConversationDto(

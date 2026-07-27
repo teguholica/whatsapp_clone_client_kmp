@@ -5,8 +5,6 @@ import com.teguholica.chat.data.remote.dto.ParticipantDto
 import com.teguholica.chat.domain.model.Chat
 import com.teguholica.chat.domain.model.ChatType
 import com.teguholica.chat.domain.model.User
-import com.teguholica.chat.domain.repository.AuthRepository
-import com.teguholica.chat.domain.repository.AuthResult
 import com.teguholica.chat.domain.repository.ChatRepository
 import com.teguholica.chat.ui.newchat.NewChatUiState
 import com.teguholica.chat.ui.newchat.NewChatViewModel
@@ -18,13 +16,12 @@ import kotlin.test.assertTrue
 
 class NewChatViewModelTest {
 
-    private val fakeAuth = FakeAuth3()
     private val fakeApi = FakeContactApi3()
     private val fakeRepo = FakeChatRepository3()
 
     @Test
     fun loadContacts_populates_ui_state_with_contacts() = runBlocking {
-        val vm = NewChatViewModel(fakeApi, fakeRepo, fakeAuth, scope = this)
+        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
         vm.loadContacts()
         yield()
 
@@ -37,7 +34,7 @@ class NewChatViewModelTest {
 
     @Test
     fun searchQuery_filters_contacts() = runBlocking {
-        val vm = NewChatViewModel(fakeApi, fakeRepo, fakeAuth, scope = this)
+        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
         vm.loadContacts()
         yield()
         vm.updateSearchQuery("Budi")
@@ -56,7 +53,7 @@ class NewChatViewModelTest {
             participants = listOf(User(id = "contact_budi", phone = "+62811111111", displayName = "Budi")),
             createdAt = "2025-01-01T00:00:00Z",
         )
-        val vm = NewChatViewModel(fakeApi, fakeRepo, fakeAuth, scope = this)
+        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
         vm.createOrNavigate("contact_budi")
 
         val state = vm.uiState.value
@@ -66,7 +63,7 @@ class NewChatViewModelTest {
 
     @Test
     fun createOrNavigate_new_contact_creates_conversation() = runBlocking {
-        val vm = NewChatViewModel(fakeApi, fakeRepo, fakeAuth, scope = this)
+        val vm = NewChatViewModel(fakeApi, fakeRepo, scope = this)
         vm.createOrNavigate("contact_siti")
         yield()
 
@@ -76,20 +73,8 @@ class NewChatViewModelTest {
     }
 }
 
-private class FakeAuth3 : AuthRepository {
-    override suspend fun register(phone: String) = Result.success(Unit)
-    override suspend fun verify(phone: String, otp: String) =
-        Result.success(AuthResult("fake_access", "fake_refresh", User("fake_id", "+628123456789")))
-    override fun getSavedAccessToken() = "fake_token"
-    override fun getSavedRefreshToken() = "fake_refresh"
-    override fun getSavedUserId() = "fake_user"
-    override fun getSavedPhone() = "+628123456789"
-    override fun isLoggedIn() = true
-    override fun logout() {}
-}
-
 private class FakeContactApi3 : ContactApi() {
-    override suspend fun getAll(token: String) = Result.success(listOf(
+    override suspend fun getAll() = Result.success(listOf(
         ParticipantDto(id = "contact_budi", phone = "+62811111111", displayName = "Budi"),
         ParticipantDto(id = "contact_siti", phone = "+62822222222", displayName = "Siti"),
     ))

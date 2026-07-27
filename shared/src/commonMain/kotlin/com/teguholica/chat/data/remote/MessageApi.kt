@@ -11,14 +11,12 @@ class MessageApi {
     private val baseUrl get() = ApiConfig.baseUrl
 
     suspend fun getMessages(
-        token: String,
         conversationId: String,
         limit: Int = 50,
         before: String? = null,
     ): Result<List<MessageResponseDto>> {
         return try {
             val response = client.get("$baseUrl/api/messages/$conversationId") {
-                bearerAuth(token)
                 parameter("limit", limit)
                 before?.let { parameter("before", it) }
             }
@@ -35,14 +33,12 @@ class MessageApi {
     }
 
     suspend fun sendMessage(
-        token: String,
         conversationId: String,
         type: String,
         content: String,
     ): Result<MessageResponseDto> {
         return try {
             val response = client.post("$baseUrl/api/messages/$conversationId") {
-                bearerAuth(token)
                 contentType(ContentType.Application.Json)
                 setBody(SendMessageRequest(type = type, content = content))
             }

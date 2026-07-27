@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teguholica.chat.data.remote.ContactApi
 import com.teguholica.chat.domain.model.ChatType
-import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.domain.repository.ChatRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -35,7 +34,6 @@ data class ContactDisplay(
 class NewChatViewModel(
     private val contactApi: ContactApi,
     private val chatRepository: ChatRepository,
-    private val authRepository: AuthRepository,
     private val scope: CoroutineScope? = null,
 ) : ViewModel() {
 
@@ -52,8 +50,7 @@ class NewChatViewModel(
     fun loadContacts() {
         coroutineScope.launch {
             _uiState.value = NewChatUiState.Loading
-            val token = authRepository.getSavedAccessToken() ?: return@launch
-            contactApi.getAll(token).fold(
+            contactApi.getAll().fold(
                 onSuccess = { dtos ->
                     contacts = dtos.map { dto ->
                         ContactDisplay(
