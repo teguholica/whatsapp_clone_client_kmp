@@ -34,6 +34,12 @@ Membangun client WhatsApp clone native untuk Android dan iOS menggunakan KMP + C
 22. Sebagai pengguna, saya ingin melihat daftar kontak saya, agar bisa memulai chat dengan mereka
 23. Sebagai pengguna, saya ingin aplikasi support dark mode, agar nyaman dipakai di malam hari
 24. Sebagai pengguna, saya ingin aplikasi berjalan di Android dan iOS dengan UI dan fungsionalitas yang sama
+25. Sebagai pengguna, saya ingin melihat tombol prominent untuk memulai chat baru, agar saya tahu cara memulai percakapan personal
+26. Sebagai pengguna, saya ingin memilih kontak dari daftar untuk memulai chat personal, agar tidak perlu mengetik nomor manual
+27. Sebagai pengguna, saya ingin mencari kontak dengan mengetik nama, agar cepat menemukan kontak yang saya cari
+28. Sebagai pengguna, saya ingin chat dengan kontak langsung terbuka setelah saya pilih, tanpa langkah tambahan
+29. Sebagai pengguna, saya ingin diarahkan ke chat yang sudah ada jika memilih kontak yang sudah pernah di-chat, agar tidak membuat duplikat
+30. Sebagai pengguna, saya ingin melihat loading indicator saat kontak dimuat, agar tahu aplikasi sedang bekerja
 
 ## Implementation Decisions
 
@@ -132,7 +138,7 @@ enum class PresenceStatus { ONLINE, OFFLINE }
 
 ### Seams & Modularity
 
-Keseluruhan fitur dipecah menjadi 9 langkah tracer bullet:
+Keseluruhan fitur dipecah menjadi 10 langkah tracer bullet:
 
 1. **Dependencies** — Konfigurasi build files (version catalog, plugins, dependencies)
 2. **Domain Models** — Data class, SQLDelight schema, DataStore keys
@@ -143,6 +149,7 @@ Keseluruhan fitur dipecah menjadi 9 langkah tracer bullet:
 7. **Group Chat** — Create grup, multiple participants, typing indicator group
 8. **Media Upload** — Picker → multipart upload → attach ke message
 9. **Polish** — Typing indicator, presence indicator, auto-reconnect, error handling, dark mode
+10. **New Chat** — FAB + Contact picker + Create personal conversation
 
 ## Testing Decisions
 

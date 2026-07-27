@@ -1,13 +1,32 @@
 package com.teguholica.chat.data.remote
 
-import com.teguholica.chat.data.remote.dto.ConversationDto
+import com.teguholica.chat.data.remote.dto.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 
-class ConversationApi {
+open class ConversationApi {
     private val client get() = NetworkClient.httpClient
     private val baseUrl get() = ApiConfig.baseUrl
+
+    open suspend fun create(token: String, participantId: String): Result<ConversationDto> {
+        return try {
+            val response = client.post("$baseUrl/api/conversations") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(CreateConversationRequest(participantId))
+            }
+            if (!response.status.isSuccess()) {
+                Result.failure(AuthApiException(response.status.value, "Gagal buat percakapan"))
+            } else {
+                Result.success(response.body())
+            }
+        } catch (e: AuthApiException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(AuthApiException(0, "Gagal terhubung: ${e.message}"))
+        }
+    }
 
     suspend fun getAll(token: String): Result<List<ConversationDto>> {
         return try {

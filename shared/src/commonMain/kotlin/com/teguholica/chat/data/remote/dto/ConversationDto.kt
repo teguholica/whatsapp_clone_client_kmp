@@ -3,6 +3,11 @@ package com.teguholica.chat.data.remote.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class CreateConversationRequest(
+    val participantId: String,
+)
+
+@Serializable
 data class ConversationDto(
     val id: String,
     val type: String,

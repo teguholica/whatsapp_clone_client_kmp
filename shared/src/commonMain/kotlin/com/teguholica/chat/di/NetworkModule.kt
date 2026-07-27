@@ -1,6 +1,7 @@
 package com.teguholica.chat.di
 
 import com.teguholica.chat.data.remote.AuthApi
+import com.teguholica.chat.data.remote.ContactApi
 import com.teguholica.chat.data.remote.ConversationApi
 import com.teguholica.chat.data.remote.GroupApi
 import com.teguholica.chat.data.remote.MediaUploadApi
@@ -10,6 +11,7 @@ import org.koin.dsl.module
 
 val networkModule = module {
     single { AuthApi() }
+    single { ContactApi() }
     single { ConversationApi() }
     single { GroupApi() }
     single { MessageApi() }

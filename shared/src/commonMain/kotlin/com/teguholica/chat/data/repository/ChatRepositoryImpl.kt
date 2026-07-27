@@ -13,6 +13,28 @@ class ChatRepositoryImpl(
     private var cache: List<Chat> = emptyList()
     private var conversationIds: Set<String> = emptySet()
 
+    override suspend fun createPersonalConversation(participantId: String): Result<Chat> {
+        val token = authRepository.getSavedAccessToken()
+            ?: return Result.failure(Exception("Belum login"))
+        return conversationApi.create(token, participantId).map { dto ->
+            val participants = dto.participants.map { p ->
+                User(id = p.id, phone = p.phone, displayName = p.displayName, avatarUrl = p.avatarUrl)
+            }
+            val chat = Chat(
+                id = dto.id,
+                type = ChatType.PERSONAL,
+                name = dto.name,
+                avatarUrl = dto.avatarUrl,
+                unreadCount = dto.unreadCount,
+                participants = participants,
+                createdAt = dto.createdAt,
+            )
+            conversationIds = conversationIds + chat.id
+            cache = listOf(chat) + cache
+            chat
+        }
+    }
+
     override suspend fun getAll(): Result<List<Chat>> {
         val token = authRepository.getSavedAccessToken()
             ?: return Result.failure(Exception("Belum login"))
