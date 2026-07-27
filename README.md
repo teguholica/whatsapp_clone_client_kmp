@@ -1,8 +1,103 @@
-# Chat — WhatsApp Clone KMP
+<div align="center">
+  <h1>Chat</h1>
+  <p>WhatsApp Clone — KMP (Compose Multiplatform)</p>
 
-Klien WhatsApp clone untuk Android + iOS menggunakan Kotlin Multiplatform + Compose Multiplatform. UI/UX mengikuti WhatsApp original.
+  ![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-lightgrey)
+  ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-blue)
+  ![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.11.1-orange)
+</div>
 
-## Tech Stack
+---
+
+## Requirements
+
+| Dependency | Version |
+|---|---|
+| JDK | 17 |
+| Android SDK | API 24+ (Min), 36 (Target) |
+| iOS Deployment Target | 16.0+ |
+| Xcode | Latest (for iOS build) |
+| Kotlin | 2.4.10 |
+
+Backend server berjalan di `localhost:3000`. Lihat [Integration Guide](docs/integration-guide.md) untuk detail API.
+
+---
+
+## Instalasi
+
+```bash
+git clone git@github.com:teguholica/whatsapp_clone_client_kmp.git
+cd whatsapp_clone_client_kmp
+```
+
+### Menjalankan Aplikasi
+
+- **Android**: `./gradlew :androidApp:assembleDebug`
+  Base URL default: `http://10.0.2.2:3000` (emulator → host).
+- **iOS**: Buka folder `/iosApp` di Xcode dan jalankan dari sana.
+  Base URL default: `http://localhost:3000`.
+
+Konfigurasi base URL bisa diubah di `shared/src/commonMain/kotlin/com/teguholica/chat/data/remote/ApiClient.kt`:
+
+```kotlin
+object ApiConfig {
+    var baseUrl = "http://<host>:3000"
+}
+```
+
+---
+
+## Domain Model
+
+| Model | Deskripsi |
+|-------|-----------|
+| **User** | Akun terautentikasi (`id`, `phone`, `displayName`, `avatarUrl`, `presence`) |
+| **Chat** | Percakapan 1-on-1 atau grup (`PERSONAL` / `GROUP`) |
+| **Message** | Pesan text/image/video/document, status `SENT` → `DELIVERED` → `READ` |
+| **Media** | File terupload (`id`, `url`, `mimeType`, `fileSize`) |
+| **Presence** | Online/offline + `lastSeenAt` |
+
+---
+
+## Fitur MVP
+
+| Fitur | Status |
+|-------|--------|
+| Auth OTP (register → verify → JWT) | ✅ |
+| Chat List (avatar, preview, badge, presence dot) | ✅ |
+| Chat Detail (bubble hijau/putih, centang ✓/✓✓/✓✓biru) | ✅ |
+| Real-time Messaging via WebSocket | ✅ |
+| Delivery Status (sent → delivered → read) | ✅ |
+| Typing Indicator | ✅ |
+| Group Chat (create, sender name, group typing) | ✅ |
+| Media Upload (image preview via Coil) | ✅ |
+| Auto-reconnect WebSocket (exponential backoff) | ✅ |
+| Dark Mode (tema hijau gelap WhatsApp) | ✅ |
+
+---
+
+## Architecture & Project Structure
+
+MVVM + Repository. Package by feature untuk UI, by layer untuk data/domain.
+
+```
+shared/src/commonMain/kotlin/com/teguholica/chat/
+├── di/              # Koin modules
+├── data/
+│   ├── local/       # TokenStorage (SharedPref Android / NSUserDefaults iOS), SQLDelight schema
+│   ├── remote/      # Ktor API clients (Auth, Conversation, Message, Group, MediaUpload), WebSocket, DTO
+│   └── repository/  # Implementasi repository
+├── domain/
+│   ├── model/       # Data class: User, Chat, Message, Media, Presence
+│   └── repository/  # Interface repository
+└── ui/
+    ├── auth/        # Login OTP (input phone → input OTP)
+    ├── chatlist/    # Daftar chat
+    ├── chatdetail/  # Bubble chat real-time
+    └── creategroup/ # Buat grup
+```
+
+### Tech Stack
 
 | Layer | Pilihan |
 |-------|---------|
@@ -11,51 +106,14 @@ Klien WhatsApp clone untuk Android + iOS menggunakan Kotlin Multiplatform + Comp
 | Serialization | kotlinx.serialization |
 | DI | Koin |
 | Database | SQLDelight |
+| Preferences | SharedPreferences (Android) / NSUserDefaults (iOS) |
 | Image Loading | Coil 3 |
 | Navigation | Compose Navigation multiplatform |
 | Architecture | MVVM + Repository |
 
-## Arsitektur
+---
 
-```
-shared/src/commonMain/kotlin/com/teguholica/chat/
-├── di/          # Koin modules
-├── data/
-│   ├── local/   # TokenStorage, SQLDelight schema
-│   ├── remote/  # Ktor API clients, WebSocket, DTO
-│   └── repository/  # Implementasi repository
-├── domain/
-│   ├── model/   # Data class: User, Chat, Message, Media, Presence
-│   └── repository/  # Interface repository
-└── ui/
-    ├── auth/        # Login OTP (phone input → OTP input)
-    ├── chatlist/    # Daftar chat (avatar, preview, badge, presence dot)
-    ├── chatdetail/  # Bubble chat, kirim/terima real-time, media
-    └── creategroup/ # Buat grup (pilih kontak → set nama)
-```
-
-## Domain Model
-
-- **User** — akun terautentikasi (`id`, `phone`, `displayName`, `avatarUrl`, `presence`)
-- **Chat** — percakapan 1-on-1 atau grup (`PERSONAL` / `GROUP`)
-- **Message** — pesan text/image/video/document (`SENT` → `DELIVERED` → `READ`)
-- **Media** — file terupload (`id`, `url`, `mimeType`, `fileSize`)
-- **Presence** — online/offline + `lastSeenAt`
-
-## Fitur MVP
-
-- [x] Auth OTP (register → verify → JWT token)
-- [x] Chat list (avatar, last message preview, unread badge, presence dot)
-- [x] Chat detail (bubble hijau/putih, centang ✓/✓✓/✓✓biru, real-time)
-- [x] Group chat (create, sender name di bubble, typing indicator)
-- [x] Media upload (image preview via Coil, attach button 📷📎)
-- [x] WebSocket real-time (message, typing, presence, delivery status)
-- [x] Auto-reconnect (exponential backoff 1s → 30s)
-- [x] Dark mode (tema hijau gelap WhatsApp)
-
-## Backend
-
-Butuh server backend berjalan di `localhost:3000`. Backend API:
+## API Endpoints
 
 | Endpoint | Method | Deskripsi |
 |----------|--------|-----------|
@@ -70,36 +128,55 @@ Butuh server backend berjalan di `localhost:3000`. Backend API:
 | `/api/media/upload` | POST | Upload file (multipart) |
 | `ws://host:3000?token=` | WS | Real-time events |
 
-## Cara Run
+---
 
-### Android
+## WebSocket Events
 
-```bash
-./gradlew :androidApp:assembleDebug
-```
+**Client → Server:**
 
-Base URL default: `http://10.0.2.2:3000` (Android emulator → host localhost).
+| Event | Data | Deskripsi |
+|-------|------|-----------|
+| `room:join` | `{ conversationId }` | Join room |
+| `room:leave` | `{ conversationId }` | Leave room |
+| `message:read` | `{ messageId }` | Mark as read (1-on-1) |
+| `typing:start` | `{ conversationId }` | Mulai ngetik |
+| `typing:stop` | `{ conversationId }` | Berhenti ngetik |
+| `presence:online` | `{}` | Online |
 
-### iOS
+**Server → Client:**
 
-Buka `iosApp/` di Xcode, run target `iosApp`.
+| Event | Data | Deskripsi |
+|-------|------|-----------|
+| `message:new` | `{ id, conversationId, senderId, type, content, createdAt }` | Pesan baru |
+| `message:status` | `{ messageId, userId, status }` | Update status (delivered/read) |
+| `message:deleted` | `{ messageId, mode }` | Pesan dihapus |
+| `typing` | `{ conversationId, userId? }` | Seseorang ngetik |
+| `typing:stop` | `{ conversationId, userId }` | Berhenti ngetik |
+| `presence` | `{ userId, status, lastSeenAt? }` | Online/offline |
 
-Base URL default: `http://localhost:3000`.
+---
 
-### Konfigurasi Base URL
-
-Ubah di `shared/.../data/remote/ApiConfig.kt`:
-
-```kotlin
-object ApiConfig {
-    var baseUrl = "http://<host>:3000"
-}
-```
-
-Atau set `ws://<host>:3000` otomatis dari `baseUrl.replace("http", "ws")`.
-
-## Test
+## Running Tests
 
 ```bash
 ./gradlew :shared:check
 ```
+
+---
+
+## Resources & Documentation
+
+| Resource | Link |
+|----------|------|
+| Integration Guide | [Integration Guide](docs/integration-guide.md) |
+| Spec V1 | [Spec V1](docs/spec-v1.md) |
+
+---
+
+## Development Workflow
+
+Branch naming:
+- `feat/` — fitur baru
+- `fix/` — bug fix
+- `refactor/` — refactoring
+- `chore/` — update dependency, konfigurasi
