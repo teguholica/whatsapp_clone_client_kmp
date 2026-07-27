@@ -1,0 +1,88 @@
+CREATE TABLE IF NOT EXISTS ChatEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    avatarUrl TEXT,
+    lastMessageId TEXT,
+    lastMessageContent TEXT,
+    lastMessageType TEXT,
+    lastMessageTimestamp TEXT,
+    unreadCount INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS MessageEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    chatId TEXT NOT NULL,
+    senderId TEXT NOT NULL,
+    type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    mediaId TEXT,
+    mediaUrl TEXT,
+    mediaMimeType TEXT,
+    mediaFileSize INTEGER,
+    status TEXT NOT NULL DEFAULT 'SENT',
+    createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS UserEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    phone TEXT NOT NULL,
+    displayName TEXT,
+    avatarUrl TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ChatParticipantEntity (
+    chatId TEXT NOT NULL,
+    userId TEXT NOT NULL,
+    PRIMARY KEY (chatId, userId)
+);
+
+selectAllChats:
+SELECT * FROM ChatEntity ORDER BY createdAt DESC;
+
+selectChatById:
+SELECT * FROM ChatEntity WHERE id = ?;
+
+selectMessagesByChatId:
+SELECT * FROM MessageEntity WHERE chatId = ? ORDER BY createdAt DESC LIMIT ?;
+
+selectMessagesByChatIdBefore:
+SELECT * FROM MessageEntity WHERE chatId = ? AND createdAt < ? ORDER BY createdAt DESC LIMIT ?;
+
+insertChat:
+INSERT OR REPLACE INTO ChatEntity(id, type, name, avatarUrl, lastMessageId, lastMessageContent, lastMessageType, lastMessageTimestamp, unreadCount, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertMessage:
+INSERT OR REPLACE INTO MessageEntity(id, chatId, senderId, type, content, mediaId, mediaUrl, mediaMimeType, mediaFileSize, status, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateMessageStatus:
+UPDATE MessageEntity SET status = ? WHERE id = ?;
+
+insertUser:
+INSERT OR REPLACE INTO UserEntity(id, phone, displayName, avatarUrl) VALUES (?, ?, ?, ?);
+
+selectUserById:
+SELECT * FROM UserEntity WHERE id = ?;
+
+insertChatParticipant:
+INSERT OR REPLACE INTO ChatParticipantEntity(chatId, userId) VALUES (?, ?);
+
+selectParticipantsByChatId:
+SELECT u.* FROM UserEntity u
+INNER JOIN ChatParticipantEntity cp ON cp.userId = u.id
+WHERE cp.chatId = ?;
+
+deleteChat:
+DELETE FROM ChatEntity WHERE id = ?;
+
+deleteMessage:
+DELETE FROM MessageEntity WHERE id = ?;
+
+clearAll:
+DELETE FROM ChatEntity;
+DELETE FROM MessageEntity;
+DELETE FROM UserEntity;
+DELETE FROM ChatParticipantEntity;
