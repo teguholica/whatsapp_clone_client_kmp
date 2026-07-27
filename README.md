@@ -1,31 +1,105 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# Chat — WhatsApp Clone KMP
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+Klien WhatsApp clone untuk Android + iOS menggunakan Kotlin Multiplatform + Compose Multiplatform. UI/UX mengikuti WhatsApp original.
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+## Tech Stack
 
-### Running the apps
+| Layer | Pilihan |
+|-------|---------|
+| UI | Compose Multiplatform + Material 3 |
+| HTTP + WebSocket | Ktor Client |
+| Serialization | kotlinx.serialization |
+| DI | Koin |
+| Database | SQLDelight |
+| Image Loading | Coil 3 |
+| Navigation | Compose Navigation multiplatform |
+| Architecture | MVVM + Repository |
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+## Arsitektur
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+```
+shared/src/commonMain/kotlin/com/teguholica/chat/
+├── di/          # Koin modules
+├── data/
+│   ├── local/   # TokenStorage, SQLDelight schema
+│   ├── remote/  # Ktor API clients, WebSocket, DTO
+│   └── repository/  # Implementasi repository
+├── domain/
+│   ├── model/   # Data class: User, Chat, Message, Media, Presence
+│   └── repository/  # Interface repository
+└── ui/
+    ├── auth/        # Login OTP (phone input → OTP input)
+    ├── chatlist/    # Daftar chat (avatar, preview, badge, presence dot)
+    ├── chatdetail/  # Bubble chat, kirim/terima real-time, media
+    └── creategroup/ # Buat grup (pilih kontak → set nama)
+```
 
-### Running tests
+## Domain Model
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+- **User** — akun terautentikasi (`id`, `phone`, `displayName`, `avatarUrl`, `presence`)
+- **Chat** — percakapan 1-on-1 atau grup (`PERSONAL` / `GROUP`)
+- **Message** — pesan text/image/video/document (`SENT` → `DELIVERED` → `READ`)
+- **Media** — file terupload (`id`, `url`, `mimeType`, `fileSize`)
+- **Presence** — online/offline + `lastSeenAt`
 
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+## Fitur MVP
 
----
+- [x] Auth OTP (register → verify → JWT token)
+- [x] Chat list (avatar, last message preview, unread badge, presence dot)
+- [x] Chat detail (bubble hijau/putih, centang ✓/✓✓/✓✓biru, real-time)
+- [x] Group chat (create, sender name di bubble, typing indicator)
+- [x] Media upload (image preview via Coil, attach button 📷📎)
+- [x] WebSocket real-time (message, typing, presence, delivery status)
+- [x] Auto-reconnect (exponential backoff 1s → 30s)
+- [x] Dark mode (tema hijau gelap WhatsApp)
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…# whatsapp_clone_client_kmp
+## Backend
+
+Butuh server backend berjalan di `localhost:3000`. Backend API:
+
+| Endpoint | Method | Deskripsi |
+|----------|--------|-----------|
+| `/api/auth/register` | POST | Request OTP |
+| `/api/auth/verify` | POST | Verify OTP → JWT |
+| `/api/conversations` | GET | List chat |
+| `/api/conversations/:id` | GET | Detail chat |
+| `/api/messages/:conversationId` | GET | Pesan (cursor pagination) |
+| `/api/messages/:conversationId` | POST | Kirim pesan |
+| `/api/groups` | POST | Buat grup |
+| `/api/groups/:id` | GET | Info grup |
+| `/api/media/upload` | POST | Upload file (multipart) |
+| `ws://host:3000?token=` | WS | Real-time events |
+
+## Cara Run
+
+### Android
+
+```bash
+./gradlew :androidApp:assembleDebug
+```
+
+Base URL default: `http://10.0.2.2:3000` (Android emulator → host localhost).
+
+### iOS
+
+Buka `iosApp/` di Xcode, run target `iosApp`.
+
+Base URL default: `http://localhost:3000`.
+
+### Konfigurasi Base URL
+
+Ubah di `shared/.../data/remote/ApiConfig.kt`:
+
+```kotlin
+object ApiConfig {
+    var baseUrl = "http://<host>:3000"
+}
+```
+
+Atau set `ws://<host>:3000` otomatis dari `baseUrl.replace("http", "ws")`.
+
+## Test
+
+```bash
+./gradlew :shared:check
+```
