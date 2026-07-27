@@ -2,6 +2,7 @@ package com.teguholica.chat.data.remote
 
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
@@ -19,6 +20,7 @@ object NetworkClient {
                     prettyPrint = false
                 })
             }
+            install(WebSockets)
         }
     }
 }
