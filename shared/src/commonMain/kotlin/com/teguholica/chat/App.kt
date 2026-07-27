@@ -11,6 +11,7 @@ import com.teguholica.chat.ui.auth.AuthScreen
 import com.teguholica.chat.ui.chatdetail.ChatDetailScreen
 import com.teguholica.chat.ui.chatlist.ChatListScreen
 import com.teguholica.chat.ui.creategroup.CreateGroupScreen
+import com.teguholica.chat.ui.newchat.NewChatScreen
 import com.teguholica.chat.ui.theme.ChatTheme
 import org.koin.compose.koinInject
 
@@ -19,6 +20,7 @@ sealed class Screen {
     object ChatList : Screen()
     data class ChatDetail(val chatId: String, val chatName: String, val personal: Boolean) : Screen()
     object CreateGroup : Screen()
+    object NewChat : Screen()
 }
 
 @Composable
@@ -50,6 +52,7 @@ fun App() {
                                 screen = Screen.Auth
                             },
                             onCreateGroup = { screen = Screen.CreateGroup },
+                            onNewChat = { screen = Screen.NewChat },
                         )
                         is Screen.ChatDetail -> ChatDetailScreen(
                             chatId = current.chatId,
@@ -59,6 +62,12 @@ fun App() {
                         )
                         Screen.CreateGroup -> CreateGroupScreen(
                             onCreated = { screen = Screen.ChatList },
+                            onBack = { screen = Screen.ChatList },
+                        )
+                        Screen.NewChat -> NewChatScreen(
+                            onContactSelected = { chatId, chatName ->
+                                screen = Screen.ChatDetail(chatId, chatName, true)
+                            },
                             onBack = { screen = Screen.ChatList },
                         )
                     }

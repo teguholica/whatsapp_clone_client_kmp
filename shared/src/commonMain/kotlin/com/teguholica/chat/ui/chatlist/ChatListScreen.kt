@@ -27,6 +27,7 @@ fun ChatListScreen(
     onChatClick: (chatId: String, chatName: String, personal: Boolean) -> Unit,
     onLogout: () -> Unit,
     onCreateGroup: () -> Unit,
+    onNewChat: () -> Unit,
     viewModel: ChatListViewModel = koinInject(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -41,6 +42,11 @@ fun ChatListScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNewChat) {
+                Text("+", fontSize = 24.sp)
+            }
+        },
     ) { padding ->
         when (val state = uiState) {
             is ChatListUiState.Loading -> {

@@ -16,6 +16,7 @@ import com.teguholica.chat.ui.auth.AuthViewModel
 import com.teguholica.chat.ui.chatdetail.ChatDetailViewModel
 import com.teguholica.chat.ui.chatlist.ChatListViewModel
 import com.teguholica.chat.ui.creategroup.CreateGroupViewModel
+import com.teguholica.chat.ui.newchat.NewChatViewModel
 import org.koin.dsl.module
 
 val repositoryModule = module {
@@ -37,4 +38,5 @@ val repositoryModule = module {
     factory { ChatListViewModel(get(), get(), get()) }
     factory { ChatDetailViewModel(get(), get(), get(), get(), get()) }
     factory { CreateGroupViewModel(get(), get()) }
+    factory { NewChatViewModel(get(), get(), get()) }
 }

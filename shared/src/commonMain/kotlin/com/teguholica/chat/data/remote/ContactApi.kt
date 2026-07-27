@@ -5,11 +5,11 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 
-class ContactApi {
+open class ContactApi {
     private val client get() = NetworkClient.httpClient
     private val baseUrl get() = ApiConfig.baseUrl
 
-    suspend fun getAll(token: String): Result<List<ParticipantDto>> {
+    open suspend fun getAll(token: String): Result<List<ParticipantDto>> {
         return try {
             val response = client.get("$baseUrl/api/contacts") {
                 bearerAuth(token)
