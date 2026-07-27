@@ -1,14 +1,30 @@
 package com.teguholica.chat.data.remote
 
 import com.teguholica.chat.data.remote.dto.*
+import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
 
 class AuthApiException(val statusCode: Int, override val message: String) : Exception(message)
 
 class AuthApi {
-    private val client get() = NetworkClient.httpClient
+    private val client: HttpClient by lazy {
+        HttpClient {
+            install(ContentNegotiation) {
+                json(Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                    prettyPrint = false
+                })
+            }
+            install(WebSockets)
+        }
+    }
     private val baseUrl get() = ApiConfig.baseUrl
 
     suspend fun register(phone: String): Result<Unit> {
