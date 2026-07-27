@@ -8,13 +8,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.ui.auth.AuthScreen
+import com.teguholica.chat.ui.chatdetail.ChatDetailScreen
 import com.teguholica.chat.ui.chatlist.ChatListScreen
+import com.teguholica.chat.ui.creategroup.CreateGroupScreen
 import com.teguholica.chat.ui.theme.ChatTheme
 import org.koin.compose.koinInject
 
 sealed class Screen {
     object Auth : Screen()
     object ChatList : Screen()
+    data class ChatDetail(val chatId: String, val chatName: String, val personal: Boolean) : Screen()
+    object CreateGroup : Screen()
 }
 
 @Composable
@@ -33,17 +37,29 @@ fun App() {
         Surface(Modifier.fillMaxSize()) {
             Column {
                 Box(Modifier.fillMaxSize().weight(1f)) {
-                    when (screen) {
+                    when (val current = screen) {
                         Screen.Auth -> AuthScreen(
                             onAuthenticated = { screen = Screen.ChatList },
                         )
                         Screen.ChatList -> ChatListScreen(
-                            onChatClick = { _ -> },
+                            onChatClick = { id, name, personal ->
+                                screen = Screen.ChatDetail(id, name, personal)
+                            },
                             onLogout = {
                                 authRepository.logout()
                                 screen = Screen.Auth
                             },
-                            onCreateGroup = { },
+                            onCreateGroup = { screen = Screen.CreateGroup },
+                        )
+                        is Screen.ChatDetail -> ChatDetailScreen(
+                            chatId = current.chatId,
+                            chatName = current.chatName,
+                            personal = current.personal,
+                            onBack = { screen = Screen.ChatList },
+                        )
+                        Screen.CreateGroup -> CreateGroupScreen(
+                            onCreated = { screen = Screen.ChatList },
+                            onBack = { screen = Screen.ChatList },
                         )
                     }
                 }

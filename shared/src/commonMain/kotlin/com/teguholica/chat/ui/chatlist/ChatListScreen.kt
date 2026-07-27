@@ -24,7 +24,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun ChatListScreen(
-    onChatClick: (String) -> Unit,
+    onChatClick: (chatId: String, chatName: String, personal: Boolean) -> Unit,
     onLogout: () -> Unit,
     onCreateGroup: () -> Unit,
     viewModel: ChatListViewModel = koinInject(),
@@ -63,7 +63,7 @@ fun ChatListScreen(
                                     isTyping = state.typingMap[chat.id] == true,
                                     onClick = {
                                         viewModel.selectChat(chat.id)
-                                        onChatClick(chat.id)
+                                        onChatClick(chat.id, chat.name, chat.type == ChatType.PERSONAL)
                                     },
                                 )
                             }
