@@ -68,6 +68,15 @@ Membangun client WhatsApp clone native untuk Android dan iOS menggunakan KMP + C
 - iOS simulator: `http://localhost:3000`
 - Base URL di-config via Koin module, disesuaikan per platform
 
+### New Chat — Additional API
+
+| Method | Endpoint | Body | Response | Description |
+|--------|----------|------|----------|-------------|
+| POST | `/api/conversations` | `{ "participantId": "..." }` | `ConversationDto` | Create personal conversation |
+| GET | `/api/contacts` | — | `List<ParticipantDto>` | Daftar kontak user |
+
+Personal conversation dibuat explicit via `POST /api/conversations`. Jika conversation sudah ada, backend return 409 Conflict. Client cek cache lokal sebelum create untuk mencegah duplicate.
+
 ### Theme
 
 - Material 3 components dengan WhatsApp color palette
