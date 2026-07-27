@@ -2,6 +2,8 @@ package com.teguholica.chat.ui.chatdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teguholica.chat.MediaPicker
+import com.teguholica.chat.data.remote.MediaUploadApi
 import com.teguholica.chat.data.remote.MessageApi
 import com.teguholica.chat.data.remote.dto.MessageResponseDto
 import com.teguholica.chat.data.remote.ws.MessageNewData
@@ -30,6 +32,8 @@ class ChatDetailViewModel(
     private val messageApi: MessageApi,
     private val authRepository: AuthRepository,
     private val wsClient: WsClient,
+    private val mediaUploadApi: MediaUploadApi,
+    private val mediaPicker: MediaPicker,
 ) : ViewModel() {
 
     private var conversationId: String = ""
@@ -40,6 +44,9 @@ class ChatDetailViewModel(
 
     private val _draft = MutableStateFlow("")
     val draft: StateFlow<String> = _draft.asStateFlow()
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading.asStateFlow()
 
     private var isLoadingMore = false
     private var typingJob: Job? = null
@@ -116,6 +123,35 @@ class ChatDetailViewModel(
     private fun stopTyping() {
         typingJob?.cancel()
         viewModelScope.launch { wsClient.sendTypingStop(conversationId) }
+    }
+
+    fun pickAndSendMedia(type: String) {
+        viewModelScope.launch {
+            val file = when (type) {
+                "image" -> mediaPicker.pickImage()
+                "video" -> mediaPicker.pickVideo()
+                else -> mediaPicker.pickDocument()
+            } ?: return@launch
+
+            _isUploading.value = true
+            val token = authRepository.getSavedAccessToken() ?: return@launch
+            val result = mediaUploadApi.upload(token, file)
+            result.fold(
+                onSuccess = { media ->
+                    val content = """{"mediaId":"${media.id}","url":"${media.url}"}"""
+                    val msgType = when {
+                        file.mimeType.startsWith("image") -> "image"
+                        file.mimeType.startsWith("video") -> "video"
+                        else -> "document"
+                    }
+                    messageApi.sendMessage(token, conversationId, msgType, content)
+                },
+                onFailure = {
+                    _uiState.value = ChatDetailUiState.Error(it.message ?: "Gagal upload")
+                },
+            )
+            _isUploading.value = false
+        }
     }
 
     private fun joinRoom() {

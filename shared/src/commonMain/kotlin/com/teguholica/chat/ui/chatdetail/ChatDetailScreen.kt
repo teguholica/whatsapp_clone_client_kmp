@@ -13,11 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.teguholica.chat.data.remote.ApiConfig
 import com.teguholica.chat.domain.model.Message
 import com.teguholica.chat.domain.model.MessageStatus
 import com.teguholica.chat.domain.model.MessageType
@@ -41,6 +44,7 @@ fun ChatDetailScreen(
     val currentUserId = authRepository.getSavedUserId()
     val uiState by viewModel.uiState.collectAsState()
     val draft by viewModel.draft.collectAsState()
+    val isUploading by viewModel.isUploading.collectAsState()
     val listState = rememberLazyListState()
 
     DisposableEffect(chatId) {
@@ -109,10 +113,16 @@ fun ChatDetailScreen(
                     }
                 }
 
+                if (isUploading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+
                 MessageInput(
                     text = draft,
                     onTextChange = viewModel::updateDraft,
                     onSend = viewModel::sendMessage,
+                    onAttachImage = { viewModel.pickAndSendMedia("image") },
+                    onAttachDocument = { viewModel.pickAndSendMedia("document") },
                 )
             }
         }
@@ -142,7 +152,6 @@ private fun ChatDetailHeader(name: String, onBack: () -> Unit) {
 
 @Composable
 private fun MessageBubble(message: Message, isMine: Boolean, showSenderName: Boolean = false) {
-    val alignment = if (isMine) Alignment.End else Alignment.Start
     val bgColor = if (isMine) greenBubble else whiteBubble
     val shape = RoundedCornerShape(
         topStart = 12.dp, topEnd = 12.dp,
@@ -170,11 +179,26 @@ private fun MessageBubble(message: Message, isMine: Boolean, showSenderName: Boo
                     )
                     Spacer(Modifier.height(2.dp))
                 }
-                Text(
-                    text = message.content,
-                    fontSize = 15.sp,
-                    color = Color(0xFF303030),
-                )
+
+                when (message.type) {
+                    MessageType.IMAGE -> MediaPreview(message.content, isMine)
+                    MessageType.VIDEO -> {
+                        Text("[Video]", fontSize = 14.sp, color = Color(0xFF303030))
+                        Spacer(Modifier.height(2.dp))
+                    }
+                    MessageType.DOCUMENT -> {
+                        Text("[Dokumen]", fontSize = 14.sp, color = Color(0xFF303030))
+                        Spacer(Modifier.height(2.dp))
+                    }
+                    MessageType.TEXT -> {
+                        Text(
+                            text = message.content,
+                            fontSize = 15.sp,
+                            color = Color(0xFF303030),
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(2.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -193,6 +217,22 @@ private fun MessageBubble(message: Message, isMine: Boolean, showSenderName: Boo
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun MediaPreview(content: String, isMine: Boolean) {
+    val url = remember(content) { parseMediaUrl(content) }
+    if (url != null) {
+        AsyncImage(
+            model = url,
+            contentDescription = "Media",
+            modifier = Modifier
+                .widthIn(max = 240.dp)
+                .heightIn(max = 240.dp),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(Modifier.height(4.dp))
     }
 }
 
@@ -231,12 +271,20 @@ private fun MessageInput(
     text: String,
     onTextChange: (String) -> Unit,
     onSend: () -> Unit,
+    onAttachImage: () -> Unit,
+    onAttachDocument: () -> Unit,
 ) {
     Surface(shadowElevation = 2.dp) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            TextButton(onClick = onAttachImage, modifier = Modifier.size(40.dp)) {
+                Text("📷", fontSize = 18.sp)
+            }
+            TextButton(onClick = onAttachDocument, modifier = Modifier.size(40.dp)) {
+                Text("📎", fontSize = 18.sp)
+            }
             OutlinedTextField(
                 value = text,
                 onValueChange = onTextChange,
