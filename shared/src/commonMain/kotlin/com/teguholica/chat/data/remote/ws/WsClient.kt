@@ -38,6 +38,7 @@ class WsClient {
 
     private var job: Job? = null
     private var tokenProvider: (() -> String?)? = null
+    private var refreshTokenProvider: (suspend () -> Boolean)? = null
     private val joinedRooms = mutableListOf<String>()
 
     private val client: HttpClient by lazy {
@@ -46,6 +47,10 @@ class WsClient {
 
     fun setTokenProvider(provider: () -> String?) {
         tokenProvider = provider
+    }
+
+    fun setRefreshTokenProvider(provider: suspend () -> Boolean) {
+        refreshTokenProvider = provider
     }
 
     fun connect(scope: CoroutineScope) {
@@ -96,6 +101,11 @@ class WsClient {
                 _events.emit(WsEvent.Disconnected)
 
                 if (shouldReauth) {
+                    val refreshed = refreshTokenProvider?.invoke() ?: false
+                    if (refreshed) {
+                        retryDelay = 1000L
+                        continue
+                    }
                     _events.emit(WsEvent.SessionExpired)
                     break
                 }

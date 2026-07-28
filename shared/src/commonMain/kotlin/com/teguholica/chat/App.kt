@@ -47,6 +47,9 @@ fun App() {
 
     LaunchedEffect(Unit) {
         wsClient.setTokenProvider { tokenStorage.getAccessToken() }
+        wsClient.setRefreshTokenProvider {
+            authRepository.refreshTokens().isSuccess
+        }
 
         if (authRepository.isLoggedIn()) {
             wsClient.connect(this)
