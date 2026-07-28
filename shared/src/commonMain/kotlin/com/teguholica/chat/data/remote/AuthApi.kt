@@ -12,7 +12,7 @@ import kotlinx.serialization.json.Json
 
 class AuthApiException(val statusCode: Int, override val message: String) : Exception(message)
 
-class AuthApi {
+open class AuthApi {
     private val client: HttpClient by lazy {
         HttpClient {
             install(ContentNegotiation) {
@@ -57,6 +57,26 @@ class AuthApi {
                 val statusCode = response.status.value
                 val errorBody = tryParseError(response)
                 Result.failure(AuthApiException(statusCode, errorBody ?: "Gagal verifikasi ($statusCode)"))
+            } else {
+                Result.success(response.body())
+            }
+        } catch (e: AuthApiException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(AuthApiException(0, "Gagal terhubung ke server: ${e.message}"))
+        }
+    }
+
+    open suspend fun refresh(refreshToken: String): Result<RefreshResponse> {
+        return try {
+            val response = NetworkClient.httpClient.post("$baseUrl/api/auth/refresh") {
+                contentType(ContentType.Application.Json)
+                setBody(RefreshRequest(refreshToken))
+            }
+            if (!response.status.isSuccess()) {
+                val statusCode = response.status.value
+                val errorBody = tryParseError(response)
+                Result.failure(AuthApiException(statusCode, errorBody ?: "Gagal refresh token ($statusCode)"))
             } else {
                 Result.success(response.body())
             }

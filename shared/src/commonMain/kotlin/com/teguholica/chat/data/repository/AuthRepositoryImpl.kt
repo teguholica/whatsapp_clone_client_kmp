@@ -2,6 +2,7 @@ package com.teguholica.chat.data.repository
 
 import com.teguholica.chat.data.local.TokenStorage
 import com.teguholica.chat.data.remote.AuthApi
+import com.teguholica.chat.data.remote.AuthApiException
 import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.domain.repository.AuthResult
 
@@ -20,6 +21,22 @@ class AuthRepositoryImpl(
             tokenStorage.saveRefreshToken(response.refreshToken)
             tokenStorage.saveUserId(response.user.id)
             tokenStorage.savePhone(phone)
+            AuthResult(
+                accessToken = response.accessToken,
+                refreshToken = response.refreshToken,
+                user = response.user,
+            )
+        }
+    }
+
+    override suspend fun refreshTokens(): Result<AuthResult> {
+        val storedRefreshToken = tokenStorage.getRefreshToken()
+        if (storedRefreshToken == null) {
+            return Result.failure(AuthApiException(401, "Tidak ada refresh token"))
+        }
+        return authApi.refresh(storedRefreshToken).map { response ->
+            tokenStorage.saveAccessToken(response.accessToken)
+            tokenStorage.saveRefreshToken(response.refreshToken)
             AuthResult(
                 accessToken = response.accessToken,
                 refreshToken = response.refreshToken,

@@ -2,7 +2,7 @@ package com.teguholica.chat
 
 import com.teguholica.chat.data.remote.ConversationApi
 import com.teguholica.chat.data.remote.dto.ConversationDto
-import com.teguholica.chat.data.remote.dto.ParticipantDto
+import com.teguholica.chat.data.remote.dto.MemberDto
 import com.teguholica.chat.data.repository.ChatRepositoryImpl
 import com.teguholica.chat.domain.model.ChatType
 import com.teguholica.chat.domain.model.User
@@ -56,9 +56,8 @@ private class FakeConversationApi : ConversationApi() {
             id = "conv_new_1",
             type = "PERSONAL",
             name = "Budi",
-            participants = listOf(ParticipantDto(
-                id = "user_1",
-                phone = participantId,
+            members = listOf(MemberDto(
+                userId = "user_1",
                 displayName = "Budi",
             )),
             createdAt = "2025-01-01T00:00:00Z",

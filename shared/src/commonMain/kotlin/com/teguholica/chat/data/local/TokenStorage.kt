@@ -1,6 +1,6 @@
 package com.teguholica.chat.data.local
 
-expect class TokenStorage {
+interface TokenStorage {
     fun saveAccessToken(token: String)
     fun getAccessToken(): String?
     fun saveRefreshToken(token: String)

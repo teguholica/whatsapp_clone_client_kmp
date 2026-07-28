@@ -11,6 +11,7 @@ data class AuthResult(
 interface AuthRepository {
     suspend fun register(phone: String): Result<Unit>
     suspend fun verify(phone: String, otp: String): Result<AuthResult>
+    suspend fun refreshTokens(): Result<AuthResult>
     fun getSavedAccessToken(): String?
     fun getSavedRefreshToken(): String?
     fun getSavedUserId(): String?

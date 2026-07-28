@@ -1,5 +1,6 @@
 package com.teguholica.chat
 
+import com.teguholica.chat.data.remote.UserApi
 import com.teguholica.chat.domain.model.Chat
 import com.teguholica.chat.domain.model.ChatType
 import com.teguholica.chat.domain.model.Contact
@@ -24,7 +25,7 @@ class NewChatViewModelTest {
 
     @Test
     fun loadContacts_populates_ui_state_with_contacts() = runBlocking {
-        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, UserApi(), scope = this)
         vm.loadContacts()
         yield()
 
@@ -37,7 +38,7 @@ class NewChatViewModelTest {
 
     @Test
     fun searchQuery_filters_contacts() = runBlocking {
-        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, UserApi(), scope = this)
         vm.loadContacts()
         yield()
         vm.updateSearchQuery("Budi")
@@ -56,7 +57,7 @@ class NewChatViewModelTest {
             participants = listOf(User(id = "contact_budi", phone = "+62811111111", displayName = "Budi")),
             createdAt = "2025-01-01T00:00:00Z",
         )
-        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, UserApi(), scope = this)
         vm.createOrNavigate("contact_budi")
         yield()
 
@@ -67,7 +68,7 @@ class NewChatViewModelTest {
 
     @Test
     fun createOrNavigate_new_contact_creates_conversation() = runBlocking {
-        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, scope = this)
+        val vm = NewChatViewModel(fakeRepo, fakeChatRepo, UserApi(), scope = this)
         vm.createOrNavigate("contact_siti")
         yield()
 
