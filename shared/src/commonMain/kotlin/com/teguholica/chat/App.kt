@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.teguholica.chat.data.local.TokenStorage
 import com.teguholica.chat.data.remote.NetworkClient
+import io.ktor.client.plugins.auth.providers.BearerTokens
 import com.teguholica.chat.data.remote.ws.WsClient
 import com.teguholica.chat.data.remote.ws.WsEvent
 import com.teguholica.chat.domain.repository.AuthRepository
@@ -38,6 +39,11 @@ fun App() {
     val scope = rememberCoroutineScope()
 
     NetworkClient.tokenStorage = tokenStorage
+    NetworkClient.performRefresh = {
+        authRepository.refreshTokens()
+            .getOrNull()
+            ?.let { BearerTokens(it.accessToken, it.refreshToken) }
+    }
 
     LaunchedEffect(Unit) {
         wsClient.setTokenProvider { tokenStorage.getAccessToken() }

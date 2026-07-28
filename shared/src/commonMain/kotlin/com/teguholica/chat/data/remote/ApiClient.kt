@@ -20,6 +20,8 @@ object ApiConfig {
 object NetworkClient {
     lateinit var tokenStorage: TokenStorage
 
+    var performRefresh: (suspend () -> BearerTokens?)? = null
+
     private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val sessionExpired: SharedFlow<Unit> = _sessionExpired.asSharedFlow()
 
@@ -41,8 +43,11 @@ object NetworkClient {
                         BearerTokens(access, refresh)
                     }
                     refreshTokens {
-                        _sessionExpired.tryEmit(Unit)
-                        null
+                        val result = performRefresh?.invoke()
+                        if (result == null) {
+                            _sessionExpired.tryEmit(Unit)
+                        }
+                        result
                     }
                 }
             }
