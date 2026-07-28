@@ -68,9 +68,14 @@ open class AuthApi {
     }
 
     open suspend fun refresh(refreshToken: String): Result<RefreshResponse> {
+        val accessToken = NetworkClient.tokenStorage.getAccessToken()
+        if (accessToken == null) {
+            return Result.failure(AuthApiException(401, "Tidak ada access token"))
+        }
         return try {
-            val response = NetworkClient.httpClient.post("$baseUrl/api/auth/refresh") {
+            val response = client.post("$baseUrl/api/auth/refresh") {
                 contentType(ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $accessToken")
                 setBody(RefreshRequest(refreshToken))
             }
             if (!response.status.isSuccess()) {

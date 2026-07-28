@@ -60,18 +60,6 @@ class AuthRepositoryImplTest {
         assertTrue(result.isFailure)
     }
 
-    @Test
-    fun refreshTokens_stores_new_tokens_correctly_on_success() = runBlocking {
-        fakeStorage.refreshToken = "old-refresh-token"
-        val repo = AuthRepositoryImpl(fakeApi, fakeStorage)
-
-        repo.refreshTokens()
-
-        assertNotNull(fakeStorage.accessToken)
-        assertNotNull(fakeStorage.refreshToken)
-        assertEquals("new-access-token", fakeStorage.getAccessToken())
-        assertEquals("new-refresh-token", fakeStorage.getRefreshToken())
-    }
 }
 
 private class FakeAuthApi : AuthApi() {

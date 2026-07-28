@@ -5,11 +5,15 @@ import com.teguholica.chat.data.remote.AuthApi
 import com.teguholica.chat.data.remote.AuthApiException
 import com.teguholica.chat.domain.repository.AuthRepository
 import com.teguholica.chat.domain.repository.AuthResult
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class AuthRepositoryImpl(
     private val authApi: AuthApi,
     private val tokenStorage: TokenStorage,
 ) : AuthRepository {
+
+    private val refreshMutex = Mutex()
 
     override suspend fun register(phone: String): Result<Unit> {
         return authApi.register(phone)
@@ -29,12 +33,12 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun refreshTokens(): Result<AuthResult> {
+    override suspend fun refreshTokens(): Result<AuthResult> = refreshMutex.withLock {
         val storedRefreshToken = tokenStorage.getRefreshToken()
         if (storedRefreshToken == null) {
-            return Result.failure(AuthApiException(401, "Tidak ada refresh token"))
+            return@withLock Result.failure(AuthApiException(401, "Tidak ada refresh token"))
         }
-        return authApi.refresh(storedRefreshToken).map { response ->
+        authApi.refresh(storedRefreshToken).map { response ->
             tokenStorage.saveAccessToken(response.accessToken)
             tokenStorage.saveRefreshToken(response.refreshToken)
             AuthResult(
